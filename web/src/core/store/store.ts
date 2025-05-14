@@ -106,8 +106,8 @@ export async function sendMessage(
       max_plan_iterations: settings.maxPlanIterations,
       max_step_num: settings.maxStepNum,
       mcp_settings: settings.mcpSettings,
-      mode, // 关键：传递 mode
-    } as any, // 临时断言 any，后续 chatStream 类型需补充
+      mode,
+    },
     options,
   );
 

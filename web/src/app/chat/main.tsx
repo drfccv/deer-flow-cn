@@ -20,23 +20,25 @@ export default function Main() {
   return (
     <div
       className={cn(
-        "flex h-full w-full justify-center px-4 pt-12 pb-4",
-        doubleColumnMode && "gap-8",
+        // 绝对居中方案，最大宽度1600px
+        "absolute left-1/2 top-0 transform -translate-x-1/2 h-full w-full max-w-[1600px] px-2 pt-12 pb-4 sm:px-4",
+        doubleColumnMode ? "gap-4 md:gap-8 flex-row flex" : "flex-col flex",
       )}
     >
       <MessagesBlock
         className={cn(
-          "shrink-0 transition-all duration-300 ease-out",
-          !doubleColumnMode &&
-            `w-[768px] translate-x-[min(calc((100vw-538px)*0.75/2),960px/2)]`,
-          doubleColumnMode && `w-[538px]`,
-        )}
+          // 响应式宽度
+          "shrink-0 transition-all duration-300 ease-out w-full max-w-full md:max-w-[768px]",
+          doubleColumnMode
+            ? "md:w-[538px] md:translate-x-0"
+            : "md:w-[768px] md:translate-x-[min(calc((100vw-538px)*0.75/2),480px)]",
+        ) + " mb-6"} // 增加底部外边距让输入框下移
       />
       <ResearchBlock
         className={cn(
-          "w-[min(calc((100vw-538px)*0.75),960px)] pb-4 transition-all duration-300 ease-out",
-          !doubleColumnMode && "scale-0",
-          doubleColumnMode && "",
+          // 响应式宽度和显示
+          "w-full max-w-full pb-4 transition-all duration-300 ease-out",
+          doubleColumnMode ? "md:w-[min(calc((100vw-538px)*0.75),960px)] scale-100" : "scale-0 md:scale-0",
         )}
         researchId={openResearchId}
       />

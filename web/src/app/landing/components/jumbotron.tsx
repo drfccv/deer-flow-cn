@@ -41,29 +41,29 @@ export function Jumbotron() {
         <p className="max-w-4xl p-2 text-center text-sm opacity-85 md:text-2xl">
           认识 DeerFlow，您的专属深度研究助手。集成强大的搜索引擎、网页爬虫、Python 与 MCP 服务，助您即时洞察、生成全面报告，甚至播客内容。
         </p>
-        <div className="flex gap-6">
-          <Button className="hidden text-lg md:flex md:w-42" size="lg">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center justify-center w-full">
+          <Button className="max-w-xs w-auto md:w-44 text-lg font-bold flex items-center justify-center" size="lg">
             <Link
               target={
                 env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY ? "_blank" : undefined
               }
               href={
                 env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY
-                  ? "https://github.com/bytedance/deer-flow"
+                  ? "https://github.com/drfccv/deer-flow-cn"
                   : "/chat"
               }
-              className="flex items-center gap-1 w-full h-full"
+              className="flex items-center justify-center gap-1 w-full h-full"
             >
               立即体验 <ChevronRight />
             </Link>
           </Button>
           {!env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY && (
-            <Button className="w-42 text-lg" size="lg" variant="outline">
+            <Button className="max-w-xs w-auto md:w-44 text-lg font-bold flex items-center justify-center" size="lg" variant="outline">
               <a
-                href="https://github.com/bytedance/deer-flow"
+                href="https://github.com/drfccv/deer-flow-cn"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 w-full h-full"
+                className="flex items-center justify-center gap-1 w-full h-full"
               >
                 <GithubFilled />
                 了解更多

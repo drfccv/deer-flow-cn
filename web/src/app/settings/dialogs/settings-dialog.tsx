@@ -99,7 +99,7 @@ export function SettingsDialog() {
           </Button>
         </DialogTrigger>
       </Tooltip>
-      <DialogContent className="sm:max-w-[850px]">
+      <DialogContent className="sm:max-w-[850px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>DeerFlow 设置</DialogTitle>
           <DialogDescription>
@@ -108,7 +108,7 @@ export function SettingsDialog() {
         </DialogHeader>
         <Tabs value={activeTabId}>
           <div className="flex h-120 w-full overflow-auto border-y">
-            <ul className="flex w-50 shrink-0 border-r p-1">
+            <ul className="flex shrink-0 border-r p-1 w-14 sm:w-50">
               <div className="size-full">
                 {SETTINGS_TABS.map((tab) => (
                   <li
@@ -120,13 +120,13 @@ export function SettingsDialog() {
                     )}
                     onClick={() => setActiveTabId(tab.id)}
                   >
-                    <tab.icon size={16} />
-                    <span>{tab.label}</span>
+                    <tab.icon size={20} />
+                    <span className="hidden sm:inline">{tab.label}</span>
                     {tab.badge && (
                       <Badge
                         variant="outline"
                         className={cn(
-                          "border-muted-foreground text-muted-foreground ml-auto px-1 py-0 text-xs",
+                          "border-muted-foreground text-muted-foreground ml-auto px-1 py-0 text-xs hidden sm:inline",
                           activeTabId === tab.id &&
                             "border-primary-foreground text-primary-foreground",
                         )}
@@ -155,7 +155,7 @@ export function SettingsDialog() {
             </div>
           </div>
         </Tabs>
-        <DialogFooter>
+        <DialogFooter className="flex-row flex justify-end gap-2">
           <Button variant="outline" onClick={() => setOpen(false)}>
             取消
           </Button>

@@ -1,26 +1,33 @@
 // Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
 // SPDX-License-Identifier: MIT
 
-import { Settings, type LucideIcon } from "lucide-react";
+import { Settings } from "lucide-react";
 
 import { AboutTab } from "./about-tab";
 import { GeneralTab } from "./general-tab";
 import { MCPTab } from "./mcp-tab";
 
 export const SETTINGS_TABS = [GeneralTab, MCPTab, AboutTab].map((tab) => {
-  const name = tab.name ?? tab.displayName;
-  // 中文标签映射
+  // 优先 tabId，其次 name，再次 displayName
+  const name = tab.tabId ?? tab.name ?? tab.displayName;
   const labelMap: Record<string, string> = {
     general: "通用设置",
     mcp: "MCP 服务器",
     about: "关于",
   };
-  const id = name.replace(/Tab$/, "").toLocaleLowerCase();
+  let id = typeof name === "string" ? name.replace(/Tab$/i, "").toLocaleLowerCase() : "";
+  if (!labelMap[id] && typeof tab.displayName === "string" && /[\u4e00-\u9fa5]/.test(tab.displayName)) {
+    id = Object.keys(labelMap).find(k => labelMap[k] === tab.displayName) ?? id;
+  }
   return {
     ...tab,
     id,
-    label: labelMap[id] ? labelMap[id] : id,
-    icon: (tab.icon ?? <Settings />) as LucideIcon,
+    label: labelMap[id] ?? (typeof tab.displayName === "string" ? tab.displayName : id),
+    icon: tab.icon ?? Settings,
+    tabId: tab.tabId,
+    badge: tab.badge,
+    displayName: tab.displayName,
+    // 关键：保留原始组件引用
     component: tab,
   };
 });

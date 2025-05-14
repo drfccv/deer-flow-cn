@@ -16,9 +16,9 @@ import { MultiAgentSection } from "./landing/sections/multi-agent-section";
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center w-full min-h-screen">
       <Header />
-      <main className="container flex flex-col items-center justify-center gap-56">
+      <main className="container flex flex-col items-center justify-center gap-20 sm:gap-32 px-2 sm:px-0 w-full max-w-full">
         <Jumbotron />
         <CaseStudySection />
         <MultiAgentSection />
@@ -33,17 +33,17 @@ export default function HomePage() {
 
 function Header() {
   return (
-    <header className="supports-backdrop-blur:bg-background/80 bg-background/40 sticky top-0 left-0 z-40 flex h-15 w-full flex-col items-center backdrop-blur-lg">
-      <div className="container flex h-15 items-center justify-between px-3">
+    <header className="supports-backdrop-blur:bg-background/80 bg-background/40 sticky top-0 left-0 z-40 flex h-14 w-full flex-col items-center backdrop-blur-lg px-2 sm:px-0">
+      <div className="container flex h-14 items-center justify-between px-0 sm:px-3 w-full max-w-full">
         <div className="text-xl font-medium">
           <span className="mr-1 text-2xl">🦌</span>
-          <span>DeerFlow</span>
+          <span className="hidden sm:inline">DeerFlow</span>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
-            <Link href="https://github.com/bytedance/deer-flow" target="_blank">
+            <Link href="https://github.com/drfccv/deer-flow-cn" target="_blank">
               <GithubOutlined />
-              Star on GitHub
+              <span className="hidden sm:inline">Star on GitHub</span>
             </Link>
           </Button>
         </div>
@@ -56,14 +56,14 @@ function Header() {
 function Footer() {
   const year = useMemo(() => new Date().getFullYear(), []);
   return (
-    <footer className="container mt-32 flex flex-col items-center justify-center">
+    <footer className="container mt-16 sm:mt-32 flex flex-col items-center justify-center px-2 sm:px-0 w-full max-w-full">
       <hr className="from-border/0 via-border/70 to-border/0 m-0 h-px w-full border-none bg-gradient-to-r" />
-      <div className="text-muted-foreground container flex h-20 flex-col items-center justify-center text-sm">
-        <p className="text-center font-serif text-lg md:text-xl">
+      <div className="text-muted-foreground container flex h-20 flex-col items-center justify-center text-xs sm:text-sm">
+        <p className="text-center font-serif text-base sm:text-lg md:text-xl">
           &quot;Originated from Open Source, give back to Open Source.&quot;
         </p>
       </div>
-      <div className="text-muted-foreground container mb-8 flex flex-col items-center justify-center text-xs">
+      <div className="text-muted-foreground container mb-8 flex flex-col items-center justify-center text-[10px] sm:text-xs">
         <p>Licensed under MIT License</p>
         <p>&copy; {year} DeerFlow</p>
       </div>

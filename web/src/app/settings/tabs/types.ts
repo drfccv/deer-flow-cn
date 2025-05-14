@@ -13,4 +13,5 @@ export type Tab = FunctionComponent<{
   displayName?: string;
   icon?: LucideIcon;
   badge?: string;
+  tabId?: string;
 };

@@ -177,7 +177,7 @@ export const MCPTab: Tab = ({ settings, onChange }) => {
   );
 };
 MCPTab.icon = Blocks;
-MCPTab.badge = "测试版";
+MCPTab.tabId = "mcp";
 
 function mergeServers(
   existing: MCPServerMetadata[],
