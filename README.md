@@ -2,35 +2,37 @@
 
 > 本项目基于 [bytedance/deer-flow](https://github.com/bytedance/deer-flow) 二次开发，专为中文用户优化，支持一键部署、SearXNG 集成、SSL 证书等。
 
+🌐 [在线 Demo 体验](https://ai.liuyuan.top)
+
 ## 项目简介
 
 DeerFlow-CN 是一款面向深度研究与高效信息检索的 AI 工具，结合大语言模型与多种外部工具，适用于学术、科研、知识管理等场景。相比原版，DeerFlow-CN 提供了更好的中文体验、屏幕适配与本地化增强。
 
+---
+
 ## 环境要求
 
-- Node.js 22 及以上
-- Python 3.12 及以上
+- 🟢 Node.js 22 及以上
+- 🐍 Python 3.12 及以上
 
 ### 推荐工具
 
-- **uv**：简化 Python 环境与依赖管理，自动创建虚拟环境并安装依赖，无需手动配置 Python 环境。
-- **nvm**：高效管理多版本 Node.js 运行时。
-- **pnpm**：高效安装和管理 Node.js 项目依赖。
-
----
+- ⚡ **uv**：简化 Python 环境与依赖管理，自动创建虚拟环境并安装依赖，无需手动配置 Python 环境。
+- 🔄 **nvm**：高效管理多版本 Node.js 运行时。
+- 🚀 **pnpm**：高效安装和管理 Node.js 项目依赖。
 
 ---
 
 ## 主要特点
 
-- **全面汉化**：界面、交互、设置、提示等全部中文化。
-- **屏幕自适应**：支持移动端、4K、竖屏等多种分辨率，体验更佳。
-- **Chat 简单聊天模式**：可选择不调用 researcher，仅用 LLM 聊天。
-- **Settings 界面优化**：修复 Tab 显示异常，交互更流畅。
-- **SearXNG 集成**：支持 SearXNG 作为搜索来源，隐私友好。
-- **一键安装/启动 SearXNG**：内置脚本自动安装并集成 SearXNG。
-- **一键启动脚本**：`start.js`/`start-with-searxng.js` 支持 SSL，证书自动加载。
-- **SSL 支持**：可直接部署 HTTPS，证书与密钥位于 `web/fullchain.pem`、`web/privkey.pem`。
+- 🇨🇳 **全面汉化**：界面、交互、设置、提示等全部中文化。
+- 📱 **屏幕自适应**：支持移动端、4K、竖屏等多种分辨率，体验更佳。
+- 💬 **Chat 简单聊天模式**：可选择不调用 researcher，仅用 LLM 聊天。
+- 🛠️ **Settings 界面优化**：修复 Tab 显示异常，交互更流畅。
+- 🔍 **SearXNG 集成**：支持 SearXNG 作为搜索来源，隐私友好。
+- 🧩 **一键安装/启动 SearXNG**：内置脚本自动安装并集成 SearXNG。
+- ⚡ **一键启动脚本**：`start.js`/`start-with-searxng.js` 支持 SSL，证书自动加载。
+- 🔒 **SSL 支持**：可直接部署 HTTPS，证书与密钥位于 `web/fullchain.pem`、`web/privkey.pem`。
 
 ---
 
