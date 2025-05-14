@@ -1,0 +1,44 @@
+event: tool_calls
+data: {"thread_id": "lnsZbCChnN_-11ak5f_75", "agent": "coordinator", "id": "run-94b1ab24-b188-4344-a29c-4387386ebfeb", "role": "assistant", "finish_reason": "tool_calls", "tool_calls": [{"name": "handoff_to_planner", "args": {"task_title": "南京汤包的特色"}, "id": "", "type": "tool_call"}], "tool_call_chunks": [{"name": "handoff_to_planner", "args": "{\"task_title\":\"南京汤包的特色\"}", "id": "", "index": null, "type": "tool_call_chunk"}]}
+
+event: message_chunk
+data: {"thread_id": "lnsZbCChnN_-11ak5f_75", "agent": "planner", "id": "run-31114575-de18-4c61-817a-88ff40a3af0d", "role": "assistant", "content": "{"}
+
+event: message_chunk
+data: {"thread_id": "lnsZbCChnN_-11ak5f_75", "agent": "planner", "id": "run-31114575-de18-4c61-817a-88ff40a3af0d", "role": "assistant", "content": "\n  \"has_enough_context\": false,\n  \"thought\":"}
+
+event: message_chunk
+data: {"thread_id": "lnsZbCChnN_-11ak5f_75", "agent": "planner", "id": "run-31114575-de18-4c61-817a-88ff40a3af0d", "role": "assistant", "content": " \"The user wants to know what makes Nanjing Tangbao (soup dumplings) unique"}
+
+event: message_chunk
+data: {"thread_id": "lnsZbCChnN_-11ak5f_75", "agent": "planner", "id": "run-31114575-de18-4c61-817a-88ff40a3af0d", "role": "assistant", "content": " and special. To provide a comprehensive response, I need to gather information about the characteristics, history, variations, and cultural significance of Nanjing Tangbao.\",\n  \""}
+
+event: message_chunk
+data: {"thread_id": "lnsZbCChnN_-11ak5f_75", "agent": "planner", "id": "run-31114575-de18-4c61-817a-88ff40a3af0d", "role": "assistant", "content": "title\": \"Researching the Unique Characteristics of Nanjing Tangbao\",\n  \"steps\": [\n    {\n      \"need_web_search\": true,\n      "}
+
+event: message_chunk
+data: {"thread_id": "lnsZbCChnN_-11ak5f_75", "agent": "planner", "id": "run-31114575-de18-4c61-817a-88ff40a3af0d", "role": "assistant", "content": "\"title\": \"Gather Historical Information and Unique Preparation Methods of Nanjing Tangbao\",\n      \"description\": \"Collect information about the origin and historical evolution of Nanjing Tangbao. Research the specific preparation methods that distinguish it from other types of soup dumplings,"}
+
+event: message_chunk
+data: {"thread_id": "lnsZbCChnN_-11ak5f_75", "agent": "planner", "id": "run-31114575-de18-4c61-817a-88ff40a3af0d", "role": "assistant", "content": " focusing on unique ingredients, cooking techniques, and regional variations. Identify any notable historical events or figures associated with its development. Include details about how the preparation techniques have evolved over time and how they are preserved today.\",\n      \"step_type\": \""}
+
+event: message_chunk
+data: {"thread_id": "lnsZbCChnN_-11ak5f_75", "agent": "planner", "id": "run-31114575-de18-4c61-817a-88ff40a3af0d", "role": "assistant", "content": "research\"\n    },\n    {\n      \"need_web_search\": true,\n      \"title\": \"Investigate the Key Ingredients and Flavor Profiles of Nanjing Tangbao\",\n      \"description\": \"Identify the signature ingredients that contribute to the unique flavor profile of Nanjing Tangbao, including the types of meat"}
+
+event: message_chunk
+data: {"thread_id": "lnsZbCChnN_-11ak5f_75", "agent": "planner", "id": "run-31114575-de18-4c61-817a-88ff40a3af0d", "role": "assistant", "content": ", broth, and seasonings used. Detail the specific ratios and preparation techniques that create its distinctive taste and texture. Investigate any closely guarded secrets or traditional recipes that are essential to its authentic flavor. Find information about sourcing of ingredients and how they contribute to the overall quality.\",\n      \"step_type\": \"research\"\n    },\n    {\n      \"need_web_search\": true,\n      \"title\": \"Explore Cultural Significance, Modern Adaptations, and Notable Establishments\",\n      \"description\": \"Research the cultural significance of Nanjing Tangbao in Nanjing and surrounding regions. Investigate its role in local cuisine, traditions"}
+
+event: message_chunk
+data: {"thread_id": "lnsZbCChnN_-11ak5f_75", "agent": "planner", "id": "run-31114575-de18-4c61-817a-88ff40a3af0d", "role": "assistant", "content": ", and celebrations. Collect information about modern adaptations or variations of the dish, including any fusion or innovative approaches. Identify and gather information about famous Nanjing Tangbao restaurants and their signature offerings, including customer reviews and awards. Examine the impact of tourism on the popularity and availability of Nanjing Tangbao.\",\n      \"step_type\":"}
+
+event: message_chunk
+data: {"thread_id": "lnsZbCChnN_-11ak5f_75", "agent": "planner", "id": "run-31114575-de18-4c61-817a-88ff40a3af0d", "role": "assistant", "content": " \"research\"\n    }\n  ]\n}", "finish_reason": "stop"}
+
+event: message_chunk
+data: {"thread_id": "lnsZbCChnN_-11ak5f_75", "agent": "planner", "id": "run-31114575-de18-4c61-817a-88ff40a3af0d", "role": "assistant"}
+
+event: message_chunk
+data: {"thread_id": "lnsZbCChnN_-11ak5f_75", "agent": "planner", "id": "run-31114575-de18-4c61-817a-88ff40a3af0d", "role": "assistant"}
+
+event: interrupt
+data: {"thread_id": "lnsZbCChnN_-11ak5f_75", "id": "human_feedback:06e039f6-17f7-49a4-92d2-7b810a066185", "role": "assistant", "content": "Please Review the Plan.", "finish_reason": "interrupt", "options": [{"text": "Edit plan", "value": "edit_plan"}, {"text": "Start research", "value": "accepted"}]}
