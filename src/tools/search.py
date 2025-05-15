@@ -1,11 +1,13 @@
-import os
+# Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+# SPDX-License-Identifier: MIT
+
 import json
 import logging
+import os
 
 from langchain_community.tools import BraveSearch, DuckDuckGoSearchResults
 from langchain_community.tools.arxiv import ArxivQueryRun
-from langchain_community.tools.searx_search.tool import SearxSearchResults
-from langchain_community.utilities.searx_search import SearxSearchWrapper
+from langchain_community.tools.searx_search import SearxSearchResults
 from langchain_community.utilities import ArxivAPIWrapper, BraveSearchWrapper
 
 from src.config import SEARCH_MAX_RESULTS
@@ -17,7 +19,7 @@ from .decorators import create_logged_tool
 
 logger = logging.getLogger(__name__)
 
-# Tavily 搜索工具
+
 LoggedTavilySearch = create_logged_tool(TavilySearchResultsWithImages)
 tavily_search_tool = LoggedTavilySearch(
     name="web_search",
@@ -27,13 +29,11 @@ tavily_search_tool = LoggedTavilySearch(
     include_image_descriptions=True,
 )
 
-# DuckDuckGo 搜索工具
 LoggedDuckDuckGoSearch = create_logged_tool(DuckDuckGoSearchResults)
 duckduckgo_search_tool = LoggedDuckDuckGoSearch(
     name="web_search", max_results=SEARCH_MAX_RESULTS
 )
 
-# Brave 搜索工具
 LoggedBraveSearch = create_logged_tool(BraveSearch)
 brave_search_tool = LoggedBraveSearch(
     name="web_search",
@@ -43,7 +43,6 @@ brave_search_tool = LoggedBraveSearch(
     ),
 )
 
-# Arxiv 搜索工具
 LoggedArxivSearch = create_logged_tool(ArxivQueryRun)
 arxiv_search_tool = LoggedArxivSearch(
     name="web_search",
@@ -54,23 +53,17 @@ arxiv_search_tool = LoggedArxivSearch(
     ),
 )
 
-# Searx 搜索工具（新版标准写法）
-searx_wrapper = SearxSearchWrapper(
-    searx_host=os.environ["SEARX_HOST"],
-    unsecure=True,  # 如果用 http，这里要 True；https 推荐 False
-    params={
-        "language": "zh",
-        "format": "json",
-        "safesearch": 1,
-        "categories": "general"
-    },
-    headers={},
-)
-searx_search_tool = SearxSearchResults(
-    wrapper=searx_wrapper,
-    num_results=SEARCH_MAX_RESULTS
+LoggedSearxSearch = create_logged_tool(SearxSearchResults)
+searx_search_tool = LoggedSearxSearch(
+    name="web_search",
+    max_results=SEARCH_MAX_RESULTS
 )
 
+# 只暴露 web_search_tool，防止暴露底层实现名
+__all__ = [
+    "web_search_tool",
+]
+
 if __name__ == "__main__":
-    results = searx_search_tool.invoke("cute panda")
+    results = tavily_search_tool.invoke("cute panda")
     print(json.dumps(results, indent=2, ensure_ascii=False))

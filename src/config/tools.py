@@ -13,7 +13,7 @@ class SearchEngine(enum.Enum):
     DUCKDUCKGO = "duckduckgo"
     BRAVE_SEARCH = "brave_search"
     ARXIV = "arxiv"
-    SEARX = "searx"  # 新增 Searx 枚举项
+    SEARX = "searx"  # 新增 searx
 
 
 # Tool configuration
