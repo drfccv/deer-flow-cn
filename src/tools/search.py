@@ -7,13 +7,23 @@ import os
 
 from langchain_community.tools import BraveSearch, DuckDuckGoSearchResults
 from langchain_community.tools.arxiv import ArxivQueryRun
-from langchain_community.tools.searx_search import SearxSearchResults
-from langchain_community.utilities import ArxivAPIWrapper, BraveSearchWrapper
+from langchain_community.utilities.arxiv import ArxivAPIWrapper
+from langchain_community.utilities.brave_search import BraveSearchWrapper
+from langchain_community.utilities.searx_search import SearxSearchWrapper
 
 from src.config import SEARCH_MAX_RESULTS
 from src.tools.tavily_search.tavily_search_results_with_images import (
     TavilySearchResultsWithImages,
 )
+
+# 兼容不同 langchain_community 版本的 SearxSearchResults 导入
+try:
+    from langchain_community.tools.searx_search.tool import SearxSearchResults
+except ImportError:
+    try:
+        from langchain_community.tools.searx_search import SearxSearchResults
+    except ImportError:
+        SearxSearchResults = None  # 或者抛出异常，根据需要
 
 from .decorators import create_logged_tool
 
@@ -53,9 +63,16 @@ arxiv_search_tool = LoggedArxivSearch(
     ),
 )
 
+# SearxSearchResults 需要 wrapper 参数
+searx_wrapper = SearxSearchWrapper(
+    searx_host=os.getenv("SEARX_HOST", "http://localhost:2304"),  # 优先读取 .env 中 SEARX_HOST
+    unsecure=True,  # 如有 https 可改为 False
+    params={"language": "zh"},  # 可根据需要调整
+)
 LoggedSearxSearch = create_logged_tool(SearxSearchResults)
 searx_search_tool = LoggedSearxSearch(
     name="web_search",
+    wrapper=searx_wrapper,
     max_results=SEARCH_MAX_RESULTS
 )
 

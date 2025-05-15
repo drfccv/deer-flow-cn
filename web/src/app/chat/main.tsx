@@ -4,12 +4,10 @@
 "use client";
 
 import { useMemo } from "react";
-
 import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
 import { useStore, closeResearch } from "~/core/store";
 import { useIsMobile } from "~/hooks/use-mobile";
 import { cn } from "~/lib/utils";
-
 import { MessagesBlock } from "./components/messages-block";
 import { ResearchBlock } from "./components/research-block";
 
