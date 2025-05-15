@@ -86,7 +86,7 @@ uv sync
   ```
 - 详细配置说明见 `docs/configuration_guide.md`
 
-### 4. 安装 Marp（PPT 生成）
+### 4. 安装 Marp（PPT 生成）（可选）
 
 - [marp-cli 安装文档](https://github.com/marp-team/marp-cli?tab=readme-ov-file#use-package-manager)
 - macOS: `brew install marp-cli`
