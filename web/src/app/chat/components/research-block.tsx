@@ -19,9 +19,13 @@ import { ResearchReportBlock } from "./research-report-block";
 export function ResearchBlock({
   className,
   researchId = null,
+  renderActions = false,
+  hideActions = false,
 }: {
   className?: string;
   researchId: string | null;
+  renderActions?: boolean;
+  hideActions?: boolean;
 }) {
   const reportId = useStore((state) =>
     researchId ? state.researchReportIds.get(researchId) : undefined,
@@ -70,48 +74,62 @@ export function ResearchBlock({
     }
   }, [hasReport, researchId]);
 
+  // 操作按钮区域
+  const actions = (
+    <>
+      {hasReport && !reportStreaming && (
+        <>
+          <Tooltip title="Generate podcast">
+            <Button
+              className="text-gray-400"
+              size="icon"
+              variant="ghost"
+              disabled={isReplay}
+              onClick={handleGeneratePodcast}
+            >
+              <Headphones />
+            </Button>
+          </Tooltip>
+          <Tooltip title="Copy">
+            <Button
+              className="text-gray-400"
+              size="icon"
+              variant="ghost"
+              onClick={handleCopy}
+            >
+              {copied ? <Check /> : <Copy />}
+            </Button>
+          </Tooltip>
+        </>
+      )}
+      <Tooltip title="Close">
+        <Button
+          className="text-gray-400"
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            closeResearch();
+          }}
+        >
+          <X />
+        </Button>
+      </Tooltip>
+    </>
+  );
+
+  if (renderActions) {
+    // 只渲染操作按钮，不渲染 Card
+    return <div className="flex h-9 items-center justify-center">{actions}</div>;
+  }
+
   return (
     <div className={cn("h-full w-full", className)}>
       <Card className={cn("relative h-full w-full pt-4", className)}>
-        <div className="absolute right-4 flex h-9 items-center justify-center">
-          {hasReport && !reportStreaming && (
-            <>
-              <Tooltip title="Generate podcast">
-                <Button
-                  className="text-gray-400"
-                  size="icon"
-                  variant="ghost"
-                  disabled={isReplay}
-                  onClick={handleGeneratePodcast}
-                >
-                  <Headphones />
-                </Button>
-              </Tooltip>
-              <Tooltip title="Copy">
-                <Button
-                  className="text-gray-400"
-                  size="icon"
-                  variant="ghost"
-                  onClick={handleCopy}
-                >
-                  {copied ? <Check /> : <Copy />}
-                </Button>
-              </Tooltip>
-            </>
-          )}
-          <Tooltip title="Close">
-            <Button
-              className="text-gray-400"
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                closeResearch();
-              }}
-            >
-              <X />
-            </Button>
-          </Tooltip>
-        </div>
+        {!hideActions && !renderActions && (
+          <div className="absolute right-4 flex h-9 items-center justify-center">
+            {actions}
+          </div>
+        )}
         <Tabs
           className="flex h-full w-full flex-col"
           value={activeTab}
