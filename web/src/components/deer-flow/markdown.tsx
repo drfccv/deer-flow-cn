@@ -42,7 +42,8 @@ export function Markdown({
     <div
       className={cn(
         className,
-        "prose dark:prose-invert prose-p:my-0 prose-img:mt-0 flex flex-col gap-4",
+        // 统一防溢出，支持断行和横向滚动
+        "prose dark:prose-invert prose-p:my-0 prose-img:mt-0 flex flex-col gap-4 max-w-full break-words overflow-x-auto [word-break:break-all] prose-pre:overflow-x-auto prose-pre:break-all prose-pre:whitespace-pre-wrap prose-code:break-all prose-code:whitespace-pre-wrap prose-a:break-all",
       )}
       style={style}
     >

@@ -23,7 +23,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "~/components/ui/accordion";
-import { Skeleton } from "~/components/ui/skeleton";
 import { findMCPTool } from "~/core/mcp";
 import type { ToolCallRuntime } from "~/core/messages";
 import { useMessage, useStore } from "~/core/store";
@@ -57,8 +56,12 @@ export function ResearchActivitiesBlock({
                   ease: "easeOut",
                 }}
               >
-                <ActivityMessage messageId={activityId} />
-                <ActivityListItem messageId={activityId} />
+                <div className="max-w-full overflow-x-auto">
+                  <ActivityMessage messageId={activityId} />
+                </div>
+                <div className="max-w-full overflow-x-auto">
+                  <ActivityListItem messageId={activityId} />
+                </div>
                 {i !== activityIds.length - 1 && <hr className="my-8" />}
               </motion.li>
             ),
@@ -74,8 +77,10 @@ function ActivityMessage({ messageId }: { messageId: string }) {
   if (message?.agent && message.content) {
     if (message.agent !== "reporter" && message.agent !== "planner") {
       return (
-        <div className="px-4 py-2">
-          <Markdown animated>{message.content}</Markdown>
+        <div className="px-4 py-2 overflow-x-auto">
+          <div className="inline-block min-w-full">
+            <Markdown animated>{message.content}</Markdown>
+          </div>
         </div>
       );
     }
@@ -117,9 +122,6 @@ type SearchResult =
       image_description: string;
     };
 function WebSearchToolCall({ toolCall }: { toolCall: ToolCallRuntime }) {
-  const searching = useMemo(() => {
-    return toolCall.result === undefined;
-  }, [toolCall.result]);
   const searchResults = useMemo<SearchResult[]>(() => {
     let results: SearchResult[] | undefined = undefined;
     try {
@@ -148,60 +150,45 @@ function WebSearchToolCall({ toolCall }: { toolCall: ToolCallRuntime }) {
   );
   return (
     <section className="mt-4 pl-4">
-      <div className="font-medium italic">
-        <RainbowText
-          className="flex items-center"
-          animated={searchResults === undefined}
-        >
+      <div className="font-medium italic w-full">
+        <div className="flex items-center w-full min-w-0 overflow-x-auto">
           <Search size={16} className={"mr-2"} />
-          <span>Searching for&nbsp;</span>
-          <span className="max-w-[500px] overflow-hidden text-ellipsis whitespace-nowrap">
-            {(toolCall.args as { query: string }).query}
+          <span className="block sm:hidden">正在搜索</span>
+          <span className="hidden sm:inline">
+            Searching for&nbsp;
+            <span className="flex-shrink-0 min-w-0 overflow-x-auto inline-block whitespace-nowrap text-ellipsis">
+              {(toolCall.args as { query: string }).query}
+            </span>
           </span>
-        </RainbowText>
+        </div>
       </div>
-      <div className="pr-4">
-        {pageResults && (
-          <ul className="mt-2 flex flex-wrap gap-4">
-            {searching &&
-              [...Array(6)].map((_, i) => (
-                <li
-                  key={`search-result-${i}`}
-                  className="flex h-40 w-40 gap-2 rounded-md text-sm"
-                >
-                  <Skeleton
-                    className="to-accent h-full w-full rounded-md bg-gradient-to-tl from-slate-400"
-                    style={{ animationDelay: `${i * 0.2}s` }}
-                  />
-                </li>
-              ))}
-            {pageResults
-              .filter((result) => result.type === "page")
-              .map((searchResult, i) => (
-                <motion.li
-                  key={`search-result-${i}`}
-                  className="text-muted-foreground bg-accent flex max-w-40 gap-2 rounded-md px-2 py-1 text-sm"
-                  initial={{ opacity: 0, y: 10, scale: 0.66 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{
-                    duration: 0.2,
-                    delay: i * 0.1,
-                    ease: "easeOut",
-                  }}
-                >
-                  <FavIcon
-                    className="mt-1"
-                    url={searchResult.url}
-                    title={searchResult.title}
-                  />
-                  <a href={searchResult.url} target="_blank">
-                    {searchResult.title}
-                  </a>
-                </motion.li>
-              ))}
+      {/* 参考文献文本+超链接融合展示 */}
+      {pageResults && pageResults.length > 0 && (
+        <div className="mt-2 pr-4 text-sm min-w-0 overflow-x-auto">
+          <span className="text-muted-foreground">参考文献：</span>
+          {pageResults.map((result, i) => (
+            <span key={result.url} className="inline-block whitespace-nowrap min-w-0 overflow-x-auto">
+              <a
+                href={result.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline break-all hover:text-blue-800 min-w-0 overflow-x-auto"
+                title={result.title}
+              >
+                {result.title}
+              </a>
+              {i !== pageResults.length - 1 && <span className="mx-1">|</span>}
+            </span>
+          ))}
+        </div>
+      )}
+      {/* 图片结果保留原有卡片样式 */}
+      {imageResults && imageResults.length > 0 && (
+        <div className="pr-4 mt-2">
+          <ul className="flex flex-nowrap gap-4 min-w-fit w-max overflow-x-auto">
             {imageResults.map((searchResult, i) => (
               <motion.li
-                key={`search-result-${i}`}
+                key={`search-result-image-${i}`}
                 initial={{ opacity: 0, y: 10, scale: 0.66 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{
@@ -226,8 +213,8 @@ function WebSearchToolCall({ toolCall }: { toolCall: ToolCallRuntime }) {
               </motion.li>
             ))}
           </ul>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -261,7 +248,7 @@ function CrawlToolCall({ toolCall }: { toolCall: ToolCallRuntime }) {
         >
           <FavIcon className="mt-1" url={url} title={title} />
           <a
-            className="h-full flex-grow overflow-hidden text-ellipsis whitespace-nowrap"
+            className="h-full flex-grow overflow-hidden text-ellipsis whitespace-nowrap break-all"
             href={url}
             target="_blank"
           >
@@ -274,36 +261,83 @@ function CrawlToolCall({ toolCall }: { toolCall: ToolCallRuntime }) {
 }
 
 function PythonToolCall({ toolCall }: { toolCall: ToolCallRuntime }) {
+  // 修复Python代码缩进问题的辅助函数
+  const fixPythonIndentation = (code: string): string => {
+    if (!code) return "";
+    
+    // 分割代码行
+    const lines = code.split("\n");
+    
+    // 查找最小公共缩进
+    let minIndent = Infinity;
+    for (const line of lines) {
+      // 忽略空行
+      if (line.trim() === "") continue;
+      
+      // 计算前导空格数
+      const match = /^\s*/.exec(line);
+      const indent = match ? match[0].length ?? 0 : 0;
+      if (indent < minIndent) {
+        minIndent = indent;
+      }
+    }
+    
+    // 如果找不到合适的缩进（空代码或只有空行），返回原始代码
+    if (minIndent === Infinity) return code;
+    
+    // 移除每行的公共缩进
+    const fixedLines = lines.map(line => {
+      if (line.trim() === "") return line;
+      return line.substring(minIndent);
+    });
+    
+    return fixedLines.join("\n");
+  };
+
   const code = useMemo<string>(() => {
-    return (toolCall.args as { code: string }).code;
+    const rawCode = (toolCall.args as { code: string }).code;
+    // 应用缩进修复
+    return fixPythonIndentation(rawCode);
   }, [toolCall.args]);
-  const { resolvedTheme } = useTheme();
+  
+  const output = useMemo(() => {
+    if (typeof toolCall.result === "string") {
+      return toolCall.result.trim();
+    }
+    return "";
+  }, [toolCall.result]);
+
+  // 将代码格式化为 Markdown 格式
+  const codeMarkdown = useMemo(() => {
+    return "```python\n" + code.trim() + "\n```";
+  }, [code]);
+
+  // 将输出格式化为 Markdown 格式
+  const outputMarkdown = useMemo(() => {
+    if (!output) return "";
+    return "```\n" + output + "\n```";
+  }, [output]);
+
   return (
     <section className="mt-4 pl-4">
-      <div className="flex items-center">
-        <PythonOutlined className={"mr-2"} />
-        <RainbowText
-          className="text-base font-medium italic"
-          animated={toolCall.result === undefined}
-        >
+      <div className="flex items-center mb-2">
+        <PythonOutlined className="mr-2 flex-shrink-0" />
+        <span className="text-base font-medium italic truncate">
           Running Python code
-        </RainbowText>
+        </span>
       </div>
-      <div>
-        <div className="bg-accent mt-2 max-h-[400px] max-w-[calc(100%-120px)] overflow-y-auto rounded-md p-2 text-sm">
-          <SyntaxHighlighter
-            language="python"
-            style={resolvedTheme === "dark" ? dark : docco}
-            customStyle={{
-              background: "transparent",
-              border: "none",
-              boxShadow: "none",
-            }}
-          >
-            {code.trim()}
-          </SyntaxHighlighter>
+      
+      {/* 直接使用 Markdown 组件渲染代码块 */}
+      <div className="max-w-[calc(100%-16px)]">
+        <Markdown>{codeMarkdown}</Markdown>
+      </div>
+      
+      {/* 输出块也用 Markdown 组件渲染 */}
+      {output && (
+        <div className="max-w-[calc(100%-16px)] mt-2">
+          <Markdown>{outputMarkdown}</Markdown>
         </div>
-      </div>
+      )}
     </section>
   );
 }
@@ -331,7 +365,7 @@ function MCPToolCall({ toolCall }: { toolCall: ToolCallRuntime }) {
             </AccordionTrigger>
             <AccordionContent>
               {toolCall.result && (
-                <div className="bg-accent max-h-[400px] max-w-[560px] overflow-y-auto rounded-md text-sm">
+                <div className="bg-accent max-h-[400px] max-w-[560px] overflow-y-auto rounded-md text-sm break-all">
                   <SyntaxHighlighter
                     language="json"
                     style={resolvedTheme === "dark" ? dark : docco}
