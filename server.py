@@ -7,8 +7,12 @@ Server script for running the DeerFlow API.
 
 import argparse
 import logging
+from dotenv import load_dotenv
 
 import uvicorn
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -29,7 +33,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--host",
         type=str,
-        default="localhost",
+        default="0.0.0.0",
         help="Host to bind the server to (default: localhost)",
     )
     parser.add_argument(
@@ -45,6 +49,17 @@ if __name__ == "__main__":
         choices=["debug", "info", "warning", "error", "critical"],
         help="Log level (default: info)",
     )
+    # Adding SSL support
+    parser.add_argument(
+        "--ssl-keyfile",
+        type=str,
+        help="Path to SSL private key (if using SSL)",
+    )
+    parser.add_argument(
+        "--ssl-certfile",
+        type=str,
+        help="Path to SSL certificate (if using SSL)",
+    )
 
     args = parser.parse_args()
 
@@ -56,10 +71,23 @@ if __name__ == "__main__":
         reload = True
 
     logger.info("Starting DeerFlow API server")
-    uvicorn.run(
-        "src.server:app",
-        host=args.host,
-        port=args.port,
-        reload=reload,
-        log_level=args.log_level,
-    )
+
+    # Run the server with or without SSL based on arguments
+    if args.ssl_keyfile and args.ssl_certfile:
+        uvicorn.run(
+            "src.server:app",
+            host=args.host,
+            port=args.port,
+            reload=reload,
+            log_level=args.log_level,
+            ssl_keyfile=args.ssl_keyfile,  # Pass SSL keyfile
+            ssl_certfile=args.ssl_certfile,  # Pass SSL certfile
+        )
+    else:
+        uvicorn.run(
+            "src.server:app",
+            host=args.host,
+            port=args.port,
+            reload=reload,
+            log_level=args.log_level,
+        )
