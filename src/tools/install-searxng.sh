@@ -29,7 +29,7 @@ install_dependencies() {
     echo "🖥️ 当前系统: $DISTRO_ID"
 
     case "$DISTRO_ID" in
-        ubuntu|debian)
+        ubuntu|debian|uos|deepin)
             sudo apt update
             sudo apt install -y git python3 python3-venv python3-dev curl redis-server
             ;;
