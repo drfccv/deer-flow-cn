@@ -94,7 +94,7 @@ uv sync
 ### 5. 安装 SearXNG（可选，推荐）
 
 ```bash
-sh ./src/tools/install-searxng.sh
+bash ./src/tools/install-searxng.sh
 ```
 
 ### 6. 安装前端依赖
