@@ -20,7 +20,7 @@ if (isDev) {
   console.log("Starting DeerFlow in [DEVELOPMENT] mode...\n");
 
   // 启动后端服务（开发模式，含 searxng）
-  const backend = runCommand("/www/server/pyporject_evn/versions/3.13.1/bin/uv", [
+  const backend = runCommand("uv", [
     "run", "server.py", "--reload", "--host", "0.0.0.0", "--port", "8000"
   ]);
 
@@ -46,7 +46,7 @@ if (isDev) {
   console.log("Starting DeerFlow in [PRODUCTION] mode...\n");
 
   // 启动后端服务（生产模式，含 searxng）
-  const backend = runCommand("/www/server/pyporject_evn/versions/3.13.1/bin/uv", [
+  const backend = runCommand("uv", [
     "run", "server.py",
     "--host", "0.0.0.0",
     "--port", "8000",
