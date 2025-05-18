@@ -50,8 +50,9 @@ if (isDev) {
     "run", "server.py",
     "--host", "0.0.0.0",
     "--port", "8000",
-    "--ssl-keyfile", "/www/wwwroot/deer-flow/web/privkey.pem",
-    "--ssl-certfile", "/www/wwwroot/deer-flow/web/fullchain.pem"
+    //SSL证书参数传入
+    //"--ssl-keyfile", "/www/wwwroot/deer-flow/web/privkey.pem",
+    //"--ssl-certfile", "/www/wwwroot/deer-flow/web/fullchain.pem"
   ]);
 
   // 在后端服务内启动 searxng
