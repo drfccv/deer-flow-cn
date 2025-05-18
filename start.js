@@ -20,7 +20,7 @@ if (isDev) {
   console.log("Starting DeerFlow in [DEVELOPMENT] mode...\n");
 
   // Start backend in development mode (with --reload)
-  const backend = runCommand("/www/server/pyporject_evn/versions/3.13.1/bin/uv", [
+  const backend = runCommand("uv", [
     "run", "server.py", "--reload", "--host", "0.0.0.0", "--port", "8000"
   ]);
 
@@ -41,12 +41,13 @@ if (isDev) {
   console.log("Starting DeerFlow in [PRODUCTION] mode...\n");
 
   // Start backend in production mode with SSL
-  const backend = runCommand("/www/server/pyporject_evn/versions/3.13.1/bin/uv", [
+  const backend = runCommand("uv", [
     "run", "server.py", 
     "--host", "0.0.0.0", 
     "--port", "8000", 
-    "--ssl-keyfile", "/www/wwwroot/deer-flow/web/privkey.pem", 
-    "--ssl-certfile", "/www/wwwroot/deer-flow/web/fullchain.pem"
+    //SSL证书参数传入
+    //"--ssl-keyfile", "/www/wwwroot/deer-flow/web/privkey.pem", 
+    //"--ssl-certfile", "/www/wwwroot/deer-flow/web/fullchain.pem"
   ]);
 
   // Start frontend production server in background
