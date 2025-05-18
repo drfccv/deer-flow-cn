@@ -53,6 +53,9 @@ class ChatRequest(BaseModel):
     mode: Optional[str] = Field(
         "research", description="Chat mode: research or chat, for frontend mode switch"
     )
+    prompt: Optional[str] = Field(
+        None, description="Prompt for the conversation, can be user selected or custom"
+    )
 
 
 class TTSRequest(BaseModel):

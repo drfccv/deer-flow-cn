@@ -107,6 +107,7 @@ export async function sendMessage(
       max_step_num: settings.maxStepNum,
       mcp_settings: settings.mcpSettings,
       mode,
+      prompt: settings.prompt, // 新增，携带prompt
     },
     options,
   );

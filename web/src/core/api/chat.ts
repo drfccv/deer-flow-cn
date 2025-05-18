@@ -29,7 +29,8 @@ export async function* chatStream(
         }
       >;
     };
-    mode?: "research" | "chat"; // 新增 mode 字段
+    mode?: "research" | "chat";
+    prompt?: string; // 新增 prompt 字段
   },
   options: { abortSignal?: AbortSignal } = {},
 ) {

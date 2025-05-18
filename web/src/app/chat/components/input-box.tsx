@@ -41,7 +41,13 @@ export function InputBox({
   const [message, setMessage] = useState("");
   const [imeStatus, setImeStatus] = useState<"active" | "inactive">("inactive");
   const [indent, setIndent] = useState(0);
-  const [mode, setMode] = useState<"research" | "chat">("research");
+  const [mode, setMode] = useState<"research" | "chat">(() => {
+    // 初始化时从localStorage读取
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem("chat_input_mode") as "research" | "chat") || "research";
+    }
+    return "research";
+  });
   const backgroundInvestigation = useSettingsStore(
     (state) => state.general.enableBackgroundInvestigation,
   );
@@ -75,6 +81,11 @@ export function InputBox({
   useEffect(() => {
     adjustTextareaHeight();
   }, [message, adjustTextareaHeight]);
+
+  const handleSetMode = (m: "research" | "chat") => {
+    setMode(m);
+    localStorage.setItem("chat_input_mode", m);
+  };
 
   const handleSendMessage = useCallback(() => {
     if (responding) {
@@ -125,7 +136,7 @@ export function InputBox({
           variant={mode === "research" ? "default" : "outline"}
           size="sm"
           className="rounded-full px-4"
-          onClick={() => setMode("research")}
+          onClick={() => handleSetMode("research")}
         >
           研究模式
         </Button>
@@ -133,9 +144,9 @@ export function InputBox({
           variant={mode === "chat" ? "default" : "outline"}
           size="sm"
           className="rounded-full px-4"
-          onClick={() => setMode("chat")}
+          onClick={() => handleSetMode("chat")}
         >
-          简单对话
+          对话模式
         </Button>
       </div>
       {/* 输入框区域 */}

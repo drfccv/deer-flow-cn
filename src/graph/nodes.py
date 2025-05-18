@@ -202,8 +202,16 @@ def coordinator_node(
     logger.info(f"Coordinator talking. state['mode']={state.get('mode')}")
     mode = state.get("mode", "research")
     if mode == "chat":
-        # chat模式下，使用专用的 system prompt 文件 coordinator_chat.md
-        messages = apply_prompt_template("coordinator_chat", state)
+        # 日志追踪 prompt 传递
+        custom_prompt = state.get("prompt")
+        logger.info(f"[coordinator_node] state['prompt']: {repr(custom_prompt)}")
+        if isinstance(custom_prompt, str) and custom_prompt.strip():
+            messages = [{"role": "system", "content": custom_prompt.strip()}] + state["messages"]
+            logger.info("[coordinator_node] Using custom prompt as system prompt.")
+        else:
+            messages = apply_prompt_template("coordinator_chat", state)
+            logger.info("[coordinator_node] Using coordinator_chat.md as system prompt.")
+        logger.info(f"[coordinator_node] Final system prompt: {repr(messages[0]['content'])}")
         response = get_llm_by_type(AGENT_LLM_MAP["coordinator"]).invoke(messages)
         # 强制忽略 tool_calls
         if hasattr(response, "tool_calls") and response.tool_calls:

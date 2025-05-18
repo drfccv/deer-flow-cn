@@ -29,6 +29,7 @@ export type SettingsState = {
   mcp: {
     servers: MCPServerMetadata[];
   };
+  prompt?: string; // 仅chat模式下生效
 };
 
 export const useSettingsStore = create<SettingsState>(() => ({
@@ -83,7 +84,7 @@ export const getChatStreamSettings = (mode: "research" | "chat" = "research") =>
         >;
       }
     | undefined = undefined;
-  const { mcp, general } = useSettingsStore.getState();
+  const { mcp, general, prompt } = useSettingsStore.getState();
   const mcpServers = mcp.servers.filter((server) => server.enabled);
   if (mcpServers.length > 0) {
     mcpSettings = {
@@ -121,6 +122,7 @@ export const getChatStreamSettings = (mode: "research" | "chat" = "research") =>
     ...general,
     mcpSettings,
     mode, // 新增 mode 字段
+    prompt: mode === "chat" ? prompt : undefined, // 仅chat模式下传递prompt
   };
 };
 

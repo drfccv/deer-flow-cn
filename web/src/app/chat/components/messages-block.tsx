@@ -44,7 +44,7 @@ export function MessagesBlock({ className }: { className?: string }) {
           {
             interruptFeedback:
               options?.interruptFeedback ?? feedback?.option.value,
-            mode: options?.mode ?? "research", // 关键：将 mode 传递给 sendMessage
+            mode: options?.mode ?? "research",
           },
           {
             abortSignal: abortController.signal,

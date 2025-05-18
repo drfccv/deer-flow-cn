@@ -8,11 +8,16 @@ import os
 from typing import List, cast
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 from langchain_core.messages import AIMessageChunk, ToolMessage
-from langgraph.types import Command
+
+# 修复 langgraph.types 导入问题（如无用可移除）
+try:
+    from langgraph.types import Command
+except ImportError:
+    Command = None
 
 from src.graph.builder import build_graph_with_memory
 from src.podcast.graph.builder import build_graph as build_podcast_graph
@@ -28,6 +33,7 @@ from src.server.chat_request import (
 )
 from src.server.mcp_request import MCPServerMetadataRequest, MCPServerMetadataResponse
 from src.server.mcp_utils import load_mcp_tools
+from src.server.prompt_manager import load_prompts, save_prompts, add_prompt, list_chat_prompt_files
 from src.tools import VolcengineTTS
 
 logger = logging.getLogger(__name__)
@@ -50,11 +56,30 @@ app.add_middleware(
 graph = build_graph_with_memory()
 
 
+@app.get("/api/prompt/list")
+async def get_prompt_list():
+    return {"prompts": load_prompts()}
+
+
+@app.post("/api/prompt/save")
+async def save_prompt_api(prompt: dict = Body(...)):
+    add_prompt(prompt)
+    return {"success": True}
+
+
+@app.get("/api/prompt/chat-list")
+async def get_chat_prompt_list():
+    # 直接返回dict，FastAPI会自动用ensure_ascii=False序列化
+    return {"prompts": list_chat_prompt_files()}
+
+
 @app.post("/api/chat/stream")
 async def chat_stream(request: ChatRequest):
     thread_id = request.thread_id
     if thread_id == "__default__":
         thread_id = str(uuid4())
+    # 新增 prompt 字段支持
+    prompt = getattr(request, "prompt", None)
     return StreamingResponse(
         _astream_workflow_generator(
             request.model_dump()["messages"],
@@ -66,6 +91,7 @@ async def chat_stream(request: ChatRequest):
             request.mcp_settings,
             request.enable_background_investigation,
             request.mode,  # 新增 mode
+            prompt,        # 新增 prompt
         ),
         media_type="text/event-stream",
     )
@@ -81,6 +107,7 @@ async def _astream_workflow_generator(
     mcp_settings: dict,
     enable_background_investigation,
     mode: str = "research",  # 新增 mode
+    prompt: str = None,       # 新增 prompt
 ):
     input_ = {
         "messages": messages,
@@ -91,6 +118,7 @@ async def _astream_workflow_generator(
         "auto_accepted_plan": auto_accepted_plan,
         "enable_background_investigation": enable_background_investigation,
         "mode": mode,  # 传递 mode
+        "prompt": prompt, # 传递 prompt
     }
     if not auto_accepted_plan and interrupt_feedback:
         resume_msg = f"[{interrupt_feedback}]"

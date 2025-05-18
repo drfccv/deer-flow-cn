@@ -22,3 +22,4 @@ class State(MessagesState):
     enable_background_investigation: bool = True  # 是否启用背景调查
     background_investigation_results: str = None  # 背景调查结果
     mode: str = "research"  # 对话模式，支持 chat/research
+    prompt: str = None  # 新增，允许 prompt 字段被 graph/state 识别和传递

@@ -6,13 +6,15 @@ import { Settings } from "lucide-react";
 import { AboutTab } from "./about-tab";
 import { GeneralTab } from "./general-tab";
 import { MCPTab } from "./mcp-tab";
+import { PromptTab } from "./prompt-tab";
 
-export const SETTINGS_TABS = [GeneralTab, MCPTab, AboutTab].map((tab) => {
+export const SETTINGS_TABS = [GeneralTab, MCPTab, PromptTab, AboutTab].map((tab) => {
   // 优先 tabId，其次 name，再次 displayName
   const name = tab.tabId ?? tab.name ?? tab.displayName;
   const labelMap: Record<string, string> = {
     general: "通用设置",
     mcp: "MCP 服务器",
+    "prompt-preset": "提示词",
     about: "关于",
   };
   let id = typeof name === "string" ? name.replace(/Tab$/i, "").toLocaleLowerCase() : "";
