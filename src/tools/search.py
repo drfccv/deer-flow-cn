@@ -65,8 +65,8 @@ arxiv_search_tool = LoggedArxivSearch(
 
 # SearxSearchResults 需要 wrapper 参数
 searx_wrapper = SearxSearchWrapper(
-    searx_host=os.getenv("SEARX_HOST", "http://localhost:2304"),  # 优先读取 .env 中 SEARX_HOST
-    unsecure=True,  # 如有 https 可改为 False
+    searx_host=os.getenv("SEARX_HOST", "https://search.allenwong.online:54321/"),  # 优先读取 .env 中 SEARX_HOST
+    unsecure=False,  # 如有 https 可改为 False
     params={"language": "zh"},  # 可根据需要调整
 )
 LoggedSearxSearch = create_logged_tool(SearxSearchResults)

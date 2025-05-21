@@ -4,6 +4,7 @@
 # - Replace `base_url` and `model` name if you want to use a custom model
 
 BASIC_MODEL:
-  base_url: https://ark.cn-beijing.volces.com/api/v3
-  model: "doubao-1-5-pro-32k-250115"
-  api_key: xxxx
+  base_url: "http://1596502647955156.cn-shanghai.pai-eas.aliyuncs.com/api/predict/quickstart_deploy_20250515_sls6/v1"
+  model: "Qwen3-235B-A22B"
+  api_key: "Y2YxODVkOWEyMjFlYjIxYThkYmQ2YmQxYTIyNzRlYmU2NjQzNmYyMA==" # Note: User should secure this, e.g., in .env
+  # Add any other necessary parameters if identified (e.g. custom_llm_provider, though not expected for now)
