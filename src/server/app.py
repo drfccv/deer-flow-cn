@@ -134,6 +134,7 @@ async def _astream_workflow_generator(
             "max_step_num": max_step_num,
             "mcp_settings": mcp_settings,
             "mode": mode,  # 传递 mode 到 config
+            "prompt": prompt, # 将 prompt 也传递到 config
         },
         stream_mode=["messages", "updates"],
         subgraphs=True,

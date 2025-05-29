@@ -3,6 +3,8 @@
 
 import json
 import logging
+import dataclasses
+from datetime import datetime
 from typing import Annotated, Literal
 
 from langchain_core.messages import AIMessage, HumanMessage
@@ -24,7 +26,7 @@ from src.config.agents import AGENT_LLM_MAP
 from src.config.configuration import Configuration
 from src.llms.llm import get_llm_by_type
 from src.prompts.planner_model import Plan, StepType
-from src.prompts.template import apply_prompt_template
+from src.prompts.template import apply_prompt_template, env
 from src.utils.json_utils import repair_json_output
 
 from .types import State
@@ -196,20 +198,42 @@ def human_feedback_node(
 
 
 def coordinator_node(
-    state: State,
+    state: State, config: RunnableConfig = None
 ) -> Command[Literal["planner", "background_investigator", "__end__"]]:
     """Coordinator node that communicate with customers."""
     logger.info(f"Coordinator talking. state['mode']={state.get('mode')}")
     mode = state.get("mode", "research")
+    configurable = Configuration.from_runnable_config(config) if config else None
+    
     if mode == "chat":
         # 日志追踪 prompt 传递
         custom_prompt = state.get("prompt")
         logger.info(f"[coordinator_node] state['prompt']: {repr(custom_prompt)}")
         if isinstance(custom_prompt, str) and custom_prompt.strip():
-            messages = [{"role": "system", "content": custom_prompt.strip()}] + state["messages"]
-            logger.info("[coordinator_node] Using custom prompt as system prompt.")
+            # 使用 Jinja2 模板引擎渲染自定义 prompt
+            try:
+                template = env.from_string(custom_prompt.strip())
+                state_vars = {
+                    "CURRENT_TIME": datetime.now().strftime("%a %b %d %Y %H:%M:%S %z"),
+                    **state,
+                }
+                # 添加配置变量
+                if configurable:
+                    if hasattr(configurable, 'model_dump'):
+                        state_vars.update(configurable.model_dump(exclude_none=True))
+                    elif dataclasses.is_dataclass(configurable):
+                        state_vars.update(dataclasses.asdict(configurable))
+                
+                rendered_content = template.render(**state_vars)
+                messages = [{"role": "system", "content": rendered_content}] + state["messages"]
+                logger.info("[coordinator_node] Using rendered custom prompt as system prompt.")
+            except Exception as e:
+                logger.error(f"[coordinator_node] Error rendering custom prompt: {e}")
+                # 降级到原始字符串
+                messages = [{"role": "system", "content": custom_prompt.strip()}] + state["messages"]
+                logger.info("[coordinator_node] Using unrendered custom prompt as fallback.")
         else:
-            messages = apply_prompt_template("coordinator_chat", state)
+            messages = apply_prompt_template("coordinator_chat", state, configurable)
             logger.info("[coordinator_node] Using coordinator_chat.md as system prompt.")
         logger.info(f"[coordinator_node] Final system prompt: {repr(messages[0]['content'])}")
         response = get_llm_by_type(AGENT_LLM_MAP["coordinator"]).invoke(messages)
@@ -222,7 +246,7 @@ def coordinator_node(
             goto="__end__",
         )
     # 研究模式，原有流程
-    messages = apply_prompt_template("coordinator", state)
+    messages = apply_prompt_template("coordinator", state, configurable)
     response = (
         get_llm_by_type(AGENT_LLM_MAP["coordinator"])
         .bind_tools([handoff_to_planner])

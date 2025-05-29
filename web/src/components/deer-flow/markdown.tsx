@@ -44,6 +44,8 @@ export function Markdown({
         className,
         // 统一防溢出，支持断行和横向滚动
         "prose dark:prose-invert prose-p:my-0 prose-img:mt-0 flex flex-col gap-4 max-w-full break-words overflow-x-auto [word-break:break-all] prose-pre:overflow-x-auto prose-pre:break-all prose-pre:whitespace-pre-wrap prose-code:break-all prose-code:whitespace-pre-wrap prose-a:break-all",
+        // 禁用删除线样式
+        "[&_del]:no-underline [&_del]:decoration-[none] [&_del]:!decoration-transparent",
       )}
       style={style}
     >
@@ -60,6 +62,10 @@ export function Markdown({
             <a href={src as string} target="_blank" rel="noopener noreferrer">
               <Image className="rounded" src={src as string} alt={alt ?? ""} />
             </a>
+          ),
+          // 禁用删除线渲染，防止误解析
+          del: ({ children }) => (
+            <span style={{ textDecoration: 'none' }}>{children}</span>
           ),
         }}
         {...props}

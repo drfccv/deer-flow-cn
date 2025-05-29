@@ -33,6 +33,7 @@ DeerFlow-CN 是一款面向深度研究与高效信息检索的 AI 工具，结�
 - 🧩 **一键安装/启动 SearXNG**：内置脚本自动安装并集成 SearXNG。
 - ⚡ **一键启动脚本**：`start.js`/`start-with-searxng.js` 支持 SSL，证书自动加载。
 - 🔒 **SSL 支持**：可直接部署 HTTPS，证书与密钥位于 `web/fullchain.pem`、`web/privkey.pem`。
+- ✨ **自定义 Prompt 支持**：支持用户自定义 prompt 提示词，可灵活配置和调用，满足多样化场景需求。
 
 ---
 
