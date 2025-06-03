@@ -49,13 +49,10 @@ if (isDev) {
   const backend = runCommand("uv", [
     "run", "server.py",
     "--host", "0.0.0.0",
-    "--port", "8000",
-<<<<<<< HEAD
-=======
-    //SSL证书参数传入
->>>>>>> edc086a4d5e58380f5c1c8636b6719dfc1212438
-    //"--ssl-keyfile", "/www/wwwroot/deer-flow/web/privkey.pem",
-    //"--ssl-certfile", "/www/wwwroot/deer-flow/web/fullchain.pem"
+    "--port", "8000"
+    // SSL证书参数传入
+    // "--ssl-keyfile", "/www/wwwroot/deer-flow/web/privkey.pem",
+    // "--ssl-certfile", "/www/wwwroot/deer-flow/web/fullchain.pem"
   ]);
 
   // 在后端服务内启动 searxng
