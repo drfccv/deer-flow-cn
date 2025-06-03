@@ -150,6 +150,40 @@ pnpm install
 
 ---
 
+## Docker 部署
+
+### 1. 拉取镜像
+
+```powershell
+# 推荐使用官方镜像
+# 你也可以用 docker pull drfccv/deerflow-cn:latest 获取最新版
+
+docker pull drfccv/deerflow-cn:latest
+```
+
+### 2. 配置环境变量和主配置
+
+- 在项目根目录准备好你的 `.env` 和 `conf.yaml` 文件（可参考 `.env.example` 和 `conf.yaml.example`）。
+
+### 3. 启动容器
+
+```powershell
+docker run -d -p 8000:8000 -p 3000:3000 `
+  -v ${PWD}\.env:/app/.env `
+  -v ${PWD}\conf.yaml:/app/conf.yaml `
+  --name deerflow-cn drfccv/deerflow-cn:latest
+```
+
+- 访问前端请用 http://localhost:3000 ，后端 API 用 http://localhost:8000
+
+### 4. 其它说明
+
+- 镜像不会包含你的本地 `.env` 和 `conf.yaml`，请务必挂载。
+- 如需自定义端口或挂载其它配置，按需调整 `-p` 和 `-v` 参数。
+- 更多高级用法见 `docs/configuration_guide.md`。
+
+---
+
 ## 参考与致谢
 
 - 原项目：[bytedance/deer-flow](https://github.com/bytedance/deer-flow)
