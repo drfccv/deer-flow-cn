@@ -1,6 +1,6 @@
-# MCP Integrations
+# MCP 集成
 
-## Example of MCP Server Configuration
+## MCP 服务器配置示例
 
 ```json
 {
@@ -16,13 +16,13 @@
 }
 ```
 
-## APIs
+## API 接口
 
-### Get metadata of MCP Server
+### 获取 MCP 服务器元数据
 
 **POST /api/mcp/server/metadata**
 
-For `stdio` type:
+对于 `stdio` 类型：
 ```json
 {
   "transport": "stdio",
@@ -32,7 +32,7 @@ For `stdio` type:
 }
 ```
 
-For `sse` type:
+对于 `sse` 类型：
 ```json
 {
   "transport": "sse",
@@ -43,7 +43,7 @@ For `sse` type:
 }
 ```
 
-### Chat Stream
+### 聊天流
 
 **POST /api/chat/stream**
 
