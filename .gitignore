@@ -21,3 +21,10 @@ conf.yaml
 .idea/
 .langgraph_api/
 
+# Node.js dependencies
+node_modules/
+
+# Next.js build output
+.next/
+.NEXT/
+
