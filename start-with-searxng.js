@@ -50,7 +50,7 @@ if (isDev) {
     "run", "server.py",
     "--host", "0.0.0.0",
     "--port", "8000"
-    // SSL证书参数传入
+    // SSL证书参数传入（如需启用SSL请取消下面两行注释）
     // "--ssl-keyfile", "/www/wwwroot/deer-flow/web/privkey.pem",
     // "--ssl-certfile", "/www/wwwroot/deer-flow/web/fullchain.pem"
   ]);
