@@ -3,6 +3,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+
 import type { ConversationSummary, ConversationDetail, ConversationMessage } from "./conversation-types";
 import { useStore } from "./store";
 
@@ -65,7 +66,7 @@ class LocalConversationStorage {
       // 清空所有对话详情
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.startsWith(CONVERSATION_DETAILS_STORAGE_KEY)) {
+        if (key?.startsWith(CONVERSATION_DETAILS_STORAGE_KEY)) {
           localStorage.removeItem(key);
           i--; // 因为removeItem会改变localStorage.length，所以需要减1
         }
@@ -127,7 +128,7 @@ export const useConversationStore = create<ConversationState>()(
       createNewConversation: (title?: string, firstMessage?: string, mode: "research" | "chat" = "research") => {
         const conversationId = `conversation-${Date.now()}`;
         const now = new Date().toISOString();
-        const conversationTitle = title || `新对话 ${new Date().toLocaleString('zh-CN')}`;
+        const conversationTitle = title ?? `新对话 ${new Date().toLocaleString('zh-CN')}`;
         
         // 创建对话详情
         const conversation: ConversationDetail = {
@@ -208,9 +209,9 @@ export const useConversationStore = create<ConversationState>()(
             content: msg.content,
             contentChunks: [msg.content], // 简单处理，将整个内容作为一个chunk
             isStreaming: false, // 历史消息都是完成状态
-            toolCalls: msg.metadata?.toolCalls,
-            options: msg.metadata?.options, // 恢复 interrupt 消息的 options 数据
-            finishReason: msg.metadata?.finishReason, // 恢复 finishReason 用于识别 interrupt 消息
+            toolCalls: msg.metadata?.toolCalls as Array<{id: string; name: string; args: Record<string, unknown>; argsChunks?: string[]; result?: string}> | undefined,
+            options: msg.metadata?.options as Array<{text: string; value: string}> | undefined, // 恢复 interrupt 消息的 options 数据
+            finishReason: msg.metadata?.finishReason as "stop" | "interrupt" | "tool_calls" | undefined, // 恢复 finishReason 用于识别 interrupt 消息
           }));
           
           // 逐个添加消息到消息系统
@@ -220,7 +221,7 @@ export const useConversationStore = create<ConversationState>()(
         }
         
         // 恢复对话模式
-        const conversationMode = conversation.mode || "research"; // 默认研究模式
+        const conversationMode = conversation.mode ?? "research"; // 默认研究模式
         messageStore.setCurrentMode(conversationMode);
         
         set({ currentConversation: conversation, isLoading: false });

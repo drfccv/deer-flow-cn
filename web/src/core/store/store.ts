@@ -131,7 +131,7 @@ export const useStore = create<{
         id: message.id,
         conversation_id: state.conversationId,
         thread_id: message.threadId,
-        role: message.role === "tool" ? "assistant" : message.role as "user" | "assistant",
+        role: message.role === "tool" ? "assistant" : message.role,
         content: message.content,
         agent: message.agent,
         timestamp: new Date().toISOString(),
@@ -181,7 +181,7 @@ export async function sendMessage(
       // 动态导入conversation store以避免循环依赖
       const { useConversationStore } = await import('../conversation-store');
       const conversationStore = useConversationStore.getState();
-      const conversationId = conversationStore.createNewConversation(
+      conversationStore.createNewConversation(
         `新对话 ${new Date().toLocaleString('zh-CN')}`,
         undefined, // 不在创建对话时添加消息，而是在下面统一添加
         mode // 传递当前模式
@@ -197,7 +197,7 @@ export async function sendMessage(
     // 创建用户消息
     const userMessage = {
       id: nanoid(),
-      threadId: updatedState.threadId || THREAD_ID,
+      threadId: updatedState.threadId ?? THREAD_ID,
       role: "user" as const,
       content: content,
       contentChunks: [content],
@@ -209,7 +209,7 @@ export async function sendMessage(
 
   // 获取当前状态，确保使用正确的threadId
   const currentState = useStore.getState();
-  const currentThreadId = currentState.threadId || THREAD_ID;
+  const currentThreadId = currentState.threadId ?? THREAD_ID;
 
   const settings = getChatStreamSettings(mode);
   const stream = chatStream(
@@ -275,7 +275,7 @@ export async function sendMessage(
       const finalMessage = getMessage(messageId);
       const store = useStore.getState();
       if (finalMessage && store.conversationId && !finalMessage.isStreaming) {
-        store.saveMessageToConversation(finalMessage);
+        void store.saveMessageToConversation(finalMessage);
       }
     }
     setResponding(false);
@@ -326,15 +326,12 @@ function appendMessage(message: Message) {
   
   // 如果有当前对话且消息不是streaming状态，立即保存消息到对话历史
   if (store.conversationId && !message.isStreaming) {
-    store.saveMessageToConversation(message);
+    void store.saveMessageToConversation(message);
   }
 }
 
 function updateMessage(message: Message) {
   const store = useStore.getState();
-  const oldMessage = store.messages.get(message.id);
-  const wasStreaming = oldMessage?.isStreaming;
-  const nowNotStreaming = !message.isStreaming;
   
   if (
     getOngoingResearchId() &&
@@ -348,7 +345,7 @@ function updateMessage(message: Message) {
   
   // 如果消息现在是完成状态（不是streaming），保存到对话历史
   if (store.conversationId && !message.isStreaming) {
-    store.saveMessageToConversation(message);
+    void store.saveMessageToConversation(message);
   }
   
   // 移除额外检查，因为我们已经有了去重机制
@@ -369,7 +366,9 @@ function appendResearch(researchId: string) {
     }
   }
   const messageIds = [researchId];
-  messageIds.unshift(planMessage!.id);
+  if (planMessage) {
+    messageIds.unshift(planMessage.id);
+  }
   useStore.setState({
     ongoingResearchId: researchId,
     researchIds: [...useStore.getState().researchIds, researchId],

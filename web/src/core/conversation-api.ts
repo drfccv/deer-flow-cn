@@ -48,7 +48,7 @@ class ConversationAPI {
   createConversation(request: CreateConversationRequest): ConversationDetail {
     const conversationId = `conversation-${Date.now()}`;
     const now = new Date().toISOString();
-    const conversationTitle = request.title || `新对话 ${new Date().toLocaleString('zh-CN')}`;
+    const conversationTitle = request.title ?? `新对话 ${new Date().toLocaleString('zh-CN')}`;
     
     // 创建对话详情
     const conversation: ConversationDetail = {
@@ -56,7 +56,7 @@ class ConversationAPI {
       title: conversationTitle,
       created_at: now,
       updated_at: now,
-      mode: request.mode || "research", // 默认为研究模式
+      mode: request.mode ?? "research", // 默认为研究模式
       messages: request.first_message ? [{
         id: `msg-${Date.now()}`,
         conversation_id: conversationId,
@@ -77,7 +77,7 @@ class ConversationAPI {
       last_message_preview: request.first_message ? 
         (request.first_message.slice(0, 50) + (request.first_message.length > 50 ? "..." : "")) 
         : undefined,
-      mode: request.mode || "research", // 默认为研究模式
+      mode: request.mode ?? "research", // 默认为研究模式
     };
 
     try {

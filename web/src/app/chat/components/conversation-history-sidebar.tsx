@@ -4,16 +4,10 @@
 "use client";
 
 import { MessageSquare, Plus, MoreHorizontal, Edit2, Trash2, X, Menu, Trash } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 
 
 import { Button } from "~/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -23,11 +17,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import { Input } from "~/components/ui/input";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { cn } from "~/lib/utils";
 import { useConversationStore } from "~/core/conversation-store";
 import type { ConversationSummary } from "~/core/conversation-types";
+import { cn } from "~/lib/utils";
 
 interface ConversationHistorySidebarProps {
   className?: string;
@@ -97,7 +97,7 @@ export function ConversationHistorySidebar({ className }: ConversationHistorySid
   const handleNewConversation = () => {
     try {
       clearCurrentConversation();
-      const conversationId = createNewConversation(
+      createNewConversation(
         `新对话 ${new Date().toLocaleString()}`,
         undefined // 不自动添加第一条消息
       );
@@ -218,7 +218,7 @@ export function ConversationHistorySidebar({ className }: ConversationHistorySid
     };
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging) return;
     
     e.preventDefault();
@@ -236,9 +236,9 @@ export function ConversationHistorySidebar({ className }: ConversationHistorySid
     const newY = Math.max(8, Math.min(window.innerHeight - 56, dragRef.current.startPosY + deltaY));
     
     setFloatingButtonPos({ x: newX, y: newY });
-  };
+  }, [isDragging]);
 
-  const handleTouchMove = (e: TouchEvent) => {
+  const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!isDragging) return;
     
     e.preventDefault();
@@ -259,7 +259,7 @@ export function ConversationHistorySidebar({ className }: ConversationHistorySid
     const newY = Math.max(8, Math.min(window.innerHeight - 56, dragRef.current.startPosY + deltaY));
     
     setFloatingButtonPos({ x: newX, y: newY });
-  };
+  }, [isDragging]);
 
   const handleMouseUp = () => {
     setIsDragging(false);
@@ -294,7 +294,7 @@ export function ConversationHistorySidebar({ className }: ConversationHistorySid
         document.body.style.touchAction = '';
       };
     }
-  }, [isDragging]);
+  }, [isDragging, handleMouseMove, handleTouchMove]);
 
   return (
     <>
@@ -633,7 +633,7 @@ export function ConversationHistorySidebar({ className }: ConversationHistorySid
                                 textOverflow: 'ellipsis',
                                 display: '-webkit-box',
                                 WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical' as any,
+                                WebkitBoxOrient: 'vertical' as React.CSSProperties['WebkitBoxOrient'],
                                 lineHeight: '1.4',
                                 maxHeight: '2.8em', // 限制为2行
                                 wordBreak: 'break-word'

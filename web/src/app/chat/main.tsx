@@ -6,14 +6,14 @@
 import { useMemo } from "react";
 
 import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
+import { useConversationStore } from "~/core/conversation-store";
 import { useStore, closeResearch } from "~/core/store";
 import { useIsMobile } from "~/hooks/use-mobile";
 import { cn } from "~/lib/utils";
-import { useConversationStore } from "~/core/conversation-store";
 
+import { ConversationHistorySidebar } from "./components/conversation-history-sidebar";
 import { MessagesBlock } from "./components/messages-block";
 import { ResearchBlock } from "./components/research-block";
-import { ConversationHistorySidebar } from "./components/conversation-history-sidebar";
 
 export default function Main() {
   const openResearchId = useStore((state) => state.openResearchId);
