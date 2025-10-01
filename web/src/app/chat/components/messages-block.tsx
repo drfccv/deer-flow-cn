@@ -34,6 +34,7 @@ export function MessagesBlock({ className }: { className?: string }) {
   const [replayStarted, setReplayStarted] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const [feedback, setFeedback] = useState<{ option: Option } | null>(null);
+  const currentMode = useStore((state) => state.currentMode); // 获取当前模式
   const handleSend = useCallback(
     async (message: string, options?: { interruptFeedback?: string; mode?: "research" | "chat" }) => {
       const abortController = new AbortController();
@@ -44,7 +45,7 @@ export function MessagesBlock({ className }: { className?: string }) {
           {
             interruptFeedback:
               options?.interruptFeedback ?? feedback?.option.value,
-            mode: options?.mode ?? "research",
+            mode: options?.mode ?? currentMode, // 使用store中的当前模式作为默认值
           },
           {
             abortSignal: abortController.signal,
@@ -52,7 +53,7 @@ export function MessagesBlock({ className }: { className?: string }) {
         );
       } catch {}
     },
-    [feedback],
+    [feedback, currentMode], // 添加currentMode到依赖数组
   );
   const handleCancel = useCallback(() => {
     abortControllerRef.current?.abort();
@@ -86,6 +87,11 @@ export function MessagesBlock({ className }: { className?: string }) {
       {!isReplay ? (
         <div className="relative flex pb-4">
           {!responding && messageCount === 0 && (
+            <div className="pointer-events-none fixed inset-0 flex items-center justify-center">
+              <Welcome className="pointer-events-auto mb-15 w-[75%] -translate-y-24" />
+            </div>
+          )}
+          {!responding && messageCount === 0 && currentMode === "research" && (
             <ConversationStarter
               className="absolute top-[-218px] left-0"
               onSend={handleSend}

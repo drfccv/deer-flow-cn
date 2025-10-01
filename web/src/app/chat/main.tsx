@@ -9,9 +9,11 @@ import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
 import { useStore, closeResearch } from "~/core/store";
 import { useIsMobile } from "~/hooks/use-mobile";
 import { cn } from "~/lib/utils";
+import { useConversationStore } from "~/core/conversation-store";
 
 import { MessagesBlock } from "./components/messages-block";
 import { ResearchBlock } from "./components/research-block";
+import { ConversationHistorySidebar } from "./components/conversation-history-sidebar";
 
 export default function Main() {
   const openResearchId = useStore((state) => state.openResearchId);
@@ -20,20 +22,39 @@ export default function Main() {
     [openResearchId],
   );
   const isMobile = useIsMobile();
+  const { sidebarOpen } = useConversationStore();
 
   // 传递 renderActions 以便在移动端弹窗时将按钮渲染到 DialogTitle
   return (
-    <div
-      className={cn(
-        // 绝对居中方案，最大宽度1600px
-        "absolute left-1/2 top-0 transform -translate-x-1/2 h-full w-full max-w-[1600px] px-2 pt-12 pb-4 sm:px-4",
-        doubleColumnMode ? "gap-4 md:gap-8 flex-row flex" : "flex-col flex",
-      )}
-    >
+    <div className="flex h-full w-full">
+      {/* 侧边栏 - 统一处理桌面端和移动端 */}
+      <ConversationHistorySidebar />
+
+      {/* 主内容区域 */}
+      <div
+        className={cn(
+          // 全屏布局，为悬浮侧边栏腾出空间
+          "w-full h-full transition-all duration-300 ease-in-out",
+          doubleColumnMode ? "gap-4 md:gap-8 flex-row flex" : "flex-col flex",
+          // 移动端优化：侧边栏展开时不调整布局（因为是覆盖式），桌面端保留左侧空间
+          sidebarOpen 
+            ? "px-2 pt-12 pb-4 sm:px-4 sm:pl-[336px] sm:pr-4" // 移动端正常边距，桌面端左侧留空间
+            : "px-2 pt-12 pb-4 sm:px-4 sm:pl-[80px]", // 收起状态宽度(64) + 间距(16)
+        )}
+      >
+        <div
+          className={cn(
+            // 内容容器
+            "w-full h-full mx-auto",
+            doubleColumnMode ? "gap-4 md:gap-8 flex-row flex" : "flex-col flex",
+            // 限制最大宽度并居中
+            "max-w-[1600px]"
+          )}
+        >
       <MessagesBlock
         className={cn(
           // 响应式宽度
-          "shrink-0 transition-all duration-300 ease-out w-full max-w-full md:max-w-[768px]",
+          "shrink-0 transition-all duration-300 ease-in-out w-full max-w-full md:max-w-[768px]",
           doubleColumnMode
             ? "md:w-[538px] md:translate-x-0"
             : "md:w-[768px] md:translate-x-[min(calc((100vw-538px)*0.75/2),480px)]",
@@ -71,6 +92,8 @@ export default function Main() {
           researchId={openResearchId}
         />
       )}
+        </div>
+      </div>
     </div>
   );
 }

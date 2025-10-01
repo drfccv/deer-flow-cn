@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { create } from "zustand";
 
 import { chatStream, generatePodcast } from "../api";
+import { conversationAPI } from "../conversation-api";
+import type { ConversationMessage } from "../conversation-types";
 import type { Message } from "../messages";
 import { mergeMessage } from "../messages";
 import { parseJSON } from "../utils";
@@ -17,6 +19,7 @@ const THREAD_ID = nanoid();
 export const useStore = create<{
   responding: boolean;
   threadId: string | undefined;
+  conversationId: string | null;
   messageIds: string[];
   messages: Map<string, Message>;
   researchIds: string[];
@@ -25,6 +28,8 @@ export const useStore = create<{
   researchActivityIds: Map<string, string[]>;
   ongoingResearchId: string | null;
   openResearchId: string | null;
+  savedMessageIds: Set<string>; // 跟踪已保存的消息ID
+  currentMode: "research" | "chat"; // 当前对话模式
 
   appendMessage: (message: Message) => void;
   updateMessage: (message: Message) => void;
@@ -32,9 +37,14 @@ export const useStore = create<{
   openResearch: (researchId: string | null) => void;
   closeResearch: () => void;
   setOngoingResearch: (researchId: string | null) => void;
-}>((set) => ({
+  setConversation: (conversationId: string, threadId: string) => void;
+  clearConversation: () => void;
+  setCurrentMode: (mode: "research" | "chat") => void;
+  saveMessageToConversation: (message: Message) => Promise<void>;
+}>((set, get) => ({
   responding: false,
   threadId: THREAD_ID,
+  conversationId: null,
   messageIds: [],
   messages: new Map<string, Message>(),
   researchIds: [],
@@ -43,6 +53,8 @@ export const useStore = create<{
   researchActivityIds: new Map<string, string[]>(),
   ongoingResearchId: null,
   openResearchId: null,
+  savedMessageIds: new Set<string>(),
+  currentMode: "research" as const, // 默认研究模式
 
   appendMessage(message: Message) {
     set((state) => ({
@@ -71,6 +83,82 @@ export const useStore = create<{
   setOngoingResearch(researchId: string | null) {
     set({ ongoingResearchId: researchId });
   },
+  setConversation(conversationId: string, threadId: string) {
+    set({ 
+      conversationId, 
+      threadId,
+      // 清空当前消息，为新对话做准备
+      messageIds: [],
+      messages: new Map<string, Message>(),
+      researchIds: [],
+      researchPlanIds: new Map<string, string>(),
+      researchReportIds: new Map<string, string>(),
+      researchActivityIds: new Map<string, string[]>(),
+      savedMessageIds: new Set<string>(), // 清空已保存消息记录
+    });
+  },
+  clearConversation() {
+    set({ 
+      conversationId: null,
+      threadId: nanoid(), // 生成新的线程ID
+      messageIds: [],
+      messages: new Map<string, Message>(),
+      researchIds: [],
+      researchPlanIds: new Map<string, string>(),
+      researchReportIds: new Map<string, string>(),
+      researchActivityIds: new Map<string, string[]>(),
+      savedMessageIds: new Set<string>(), // 清空已保存消息记录
+    });
+  },
+  setCurrentMode(mode: "research" | "chat") {
+    set({ currentMode: mode });
+  },
+  async saveMessageToConversation(message: Message) {
+    const state = get();
+    
+    if (!state.conversationId || message.isStreaming) {
+      return;
+    }
+
+    // 检查是否已经保存过这条消息
+    if (state.savedMessageIds.has(message.id)) {
+      return;
+    }
+
+    try {
+      // 转换消息格式
+      const conversationMessage: ConversationMessage = {
+        id: message.id,
+        conversation_id: state.conversationId,
+        thread_id: message.threadId,
+        role: message.role === "tool" ? "assistant" : message.role as "user" | "assistant",
+        content: message.content,
+        agent: message.agent,
+        timestamp: new Date().toISOString(),
+        metadata: {
+          contentChunks: message.contentChunks,
+          toolCalls: message.toolCalls,
+          isStreaming: message.isStreaming,
+          options: message.options, // 保存 interrupt 消息的 options 数据
+          finishReason: message.finishReason, // 保存 finishReason 用于识别 interrupt 消息
+        },
+      };
+
+      // 实际保存到本地存储
+      const result = conversationAPI.addMessageToConversation(state.conversationId, conversationMessage);
+      if (result) {
+        
+        // 标记消息已保存，防止重复保存
+        set((currentState) => ({
+          savedMessageIds: new Set([...currentState.savedMessageIds, message.id])
+        }));
+      } else {
+        console.error('Failed to save message to conversation: conversation not found');
+      }
+    } catch (error) {
+      console.error('Failed to save message to conversation:', error);
+    }
+  },
 }));
 
 export async function sendMessage(
@@ -84,21 +172,50 @@ export async function sendMessage(
   } = {},
   options: { abortSignal?: AbortSignal } = {},
 ) {
+  // 如果有消息内容但没有当前对话，创建新对话
   if (content != null) {
-    appendMessage({
+    const currentState = useStore.getState();
+    
+    // 如果没有当前对话，自动创建新对话
+    if (!currentState.conversationId) {
+      // 动态导入conversation store以避免循环依赖
+      const { useConversationStore } = await import('../conversation-store');
+      const conversationStore = useConversationStore.getState();
+      const conversationId = conversationStore.createNewConversation(
+        `新对话 ${new Date().toLocaleString('zh-CN')}`,
+        undefined, // 不在创建对话时添加消息，而是在下面统一添加
+        mode // 传递当前模式
+      );
+      // 不需要手动设置conversation，因为createNewConversation已经会调用setConversation
+      // 设置当前对话模式
+      currentState.setCurrentMode(mode);
+    }
+    
+    // 重新获取状态，因为可能已经创建了新对话
+    const updatedState = useStore.getState();
+    
+    // 创建用户消息
+    const userMessage = {
       id: nanoid(),
-      threadId: THREAD_ID,
-      role: "user",
+      threadId: updatedState.threadId || THREAD_ID,
+      role: "user" as const,
       content: content,
       contentChunks: [content],
-    });
+      isStreaming: false, // 用户消息不是streaming状态
+    };
+    
+    appendMessage(userMessage);
   }
+
+  // 获取当前状态，确保使用正确的threadId
+  const currentState = useStore.getState();
+  const currentThreadId = currentState.threadId || THREAD_ID;
 
   const settings = getChatStreamSettings(mode);
   const stream = chatStream(
     content ?? "[REPLAY]",
     {
-      thread_id: THREAD_ID,
+      thread_id: currentThreadId,
       interrupt_feedback: interruptFeedback,
       auto_accepted_plan: settings.autoAcceptedPlan,
       enable_background_investigation:
@@ -153,6 +270,14 @@ export async function sendMessage(
     }
     useStore.getState().setOngoingResearch(null);
   } finally {
+    // 确保最后的消息被保存到对话历史（去重机制会防止重复保存）
+    if (messageId != null) {
+      const finalMessage = getMessage(messageId);
+      const store = useStore.getState();
+      if (finalMessage && store.conversationId && !finalMessage.isStreaming) {
+        store.saveMessageToConversation(finalMessage);
+      }
+    }
     setResponding(false);
   }
 }
@@ -181,6 +306,8 @@ function findMessageByToolCallId(toolCallId: string) {
 }
 
 function appendMessage(message: Message) {
+  // console.log('AppendMessage called:', message.role, message.id, 'isStreaming:', message.isStreaming);
+
   if (
     message.agent === "coder" ||
     message.agent === "reporter" ||
@@ -193,10 +320,22 @@ function appendMessage(message: Message) {
     }
     appendResearchActivity(message);
   }
-  useStore.getState().appendMessage(message);
+  
+  const store = useStore.getState();
+  store.appendMessage(message);
+  
+  // 如果有当前对话且消息不是streaming状态，立即保存消息到对话历史
+  if (store.conversationId && !message.isStreaming) {
+    store.saveMessageToConversation(message);
+  }
 }
 
 function updateMessage(message: Message) {
+  const store = useStore.getState();
+  const oldMessage = store.messages.get(message.id);
+  const wasStreaming = oldMessage?.isStreaming;
+  const nowNotStreaming = !message.isStreaming;
+  
   if (
     getOngoingResearchId() &&
     message.agent === "reporter" &&
@@ -204,7 +343,15 @@ function updateMessage(message: Message) {
   ) {
     useStore.getState().setOngoingResearch(null);
   }
-  useStore.getState().updateMessage(message);
+  
+  store.updateMessage(message);
+  
+  // 如果消息现在是完成状态（不是streaming），保存到对话历史
+  if (store.conversationId && !message.isStreaming) {
+    store.saveMessageToConversation(message);
+  }
+  
+  // 移除额外检查，因为我们已经有了去重机制
 }
 
 function getOngoingResearchId() {
@@ -322,4 +469,12 @@ export function useMessage(messageId: string | null | undefined) {
   return useStore((state) =>
     messageId ? state.messages.get(messageId) : undefined,
   );
+}
+
+export function setCurrentMode(mode: "research" | "chat") {
+  useStore.getState().setCurrentMode(mode);
+}
+
+export function getCurrentMode(): "research" | "chat" {
+  return useStore.getState().currentMode;
 }

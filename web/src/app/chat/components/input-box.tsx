@@ -18,6 +18,7 @@ import type { Option } from "~/core/messages";
 import {
   setEnableBackgroundInvestigation,
   useSettingsStore,
+  useStore,
 } from "~/core/store";
 import { cn } from "~/lib/utils";
 
@@ -41,10 +42,14 @@ export function InputBox({
   const [message, setMessage] = useState("");
   const [imeStatus, setImeStatus] = useState<"active" | "inactive">("inactive");
   const [indent, setIndent] = useState(0);
+  // 从useStore获取当前模式
+  const currentModeFromStore = useStore((state) => state.currentMode);
+  
   const [mode, setMode] = useState<"research" | "chat">(() => {
-    // 初始化时从localStorage读取
+    // 初始化时优先使用store中的currentMode，其次是localStorage
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem("chat_input_mode") as "research" | "chat") || "research";
+      return currentModeFromStore || 
+        (localStorage.getItem("chat_input_mode") as "research" | "chat") || "research";
     }
     return "research";
   });
@@ -82,9 +87,20 @@ export function InputBox({
     adjustTextareaHeight();
   }, [message, adjustTextareaHeight]);
 
+  // 监听store中的currentMode变化，并同步更新本地mode状态
+  useEffect(() => {
+    if (currentModeFromStore && currentModeFromStore !== mode) {
+      setMode(currentModeFromStore);
+      localStorage.setItem("chat_input_mode", currentModeFromStore);
+    }
+  }, [currentModeFromStore, mode]);
+
   const handleSetMode = (m: "research" | "chat") => {
     setMode(m);
     localStorage.setItem("chat_input_mode", m);
+    // 同时更新store中的currentMode
+    const store = useStore.getState();
+    store.setCurrentMode(m);
   };
 
   const handleSendMessage = useCallback(() => {

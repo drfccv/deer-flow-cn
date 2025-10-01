@@ -5,7 +5,7 @@ import base64
 import json
 import logging
 import os
-from typing import List, cast
+from typing import List, cast, Any
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Body
@@ -13,11 +13,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 from langchain_core.messages import AIMessageChunk, ToolMessage
 
-# 修复 langgraph.types 导入问题（如无用可移除）
-try:
-    from langgraph.types import Command
-except ImportError:
-    Command = None
+# 定义 Command 类，用于处理恢复消息
+class Command:
+    def __init__(self, resume=None):
+        self.resume = resume
 
 from src.graph.builder import build_graph_with_memory
 from src.podcast.graph.builder import build_graph as build_podcast_graph
@@ -31,6 +30,7 @@ from src.server.chat_request import (
     GenerateProseRequest,
     TTSRequest,
 )
+
 from src.server.mcp_request import MCPServerMetadataRequest, MCPServerMetadataResponse
 from src.server.mcp_utils import load_mcp_tools
 from src.server.prompt_manager import load_prompts, save_prompts, add_prompt, list_chat_prompt_files
@@ -73,6 +73,10 @@ async def get_chat_prompt_list():
     return {"prompts": list_chat_prompt_files()}
 
 
+# 对话历史管理 API
+
+
+
 @app.post("/api/chat/stream")
 async def chat_stream(request: ChatRequest):
     thread_id = request.thread_id
@@ -99,16 +103,26 @@ async def chat_stream(request: ChatRequest):
 
 async def _astream_workflow_generator(
     messages: List[ChatMessage],
-    thread_id: str,
-    max_plan_iterations: int,
-    max_step_num: int,
-    auto_accepted_plan: bool,
-    interrupt_feedback: str,
-    mcp_settings: dict,
+    thread_id: str | None,
+    max_plan_iterations: int | None,
+    max_step_num: int | None,
+    auto_accepted_plan: bool | None,
+    interrupt_feedback: str | None,
+    mcp_settings: dict | None,
     enable_background_investigation,
-    mode: str = "research",  # 新增 mode
-    prompt: str = None,       # 新增 prompt
+    mode: str | None = "research",  # 新增 mode
+    prompt: str | None = None,       # 新增 prompt
 ):
+    # 设置默认值
+    thread_id = thread_id or str(uuid4())
+    max_plan_iterations = max_plan_iterations or 3
+    max_step_num = max_step_num or 10  
+    auto_accepted_plan = auto_accepted_plan if auto_accepted_plan is not None else False
+    interrupt_feedback = interrupt_feedback or ""
+    mcp_settings = mcp_settings or {}
+    mode = mode or "research"
+    prompt = prompt or ""
+    
     input_ = {
         "messages": messages,
         "plan_iterations": 0,
@@ -124,7 +138,7 @@ async def _astream_workflow_generator(
         resume_msg = f"[{interrupt_feedback}]"
         # add the last message to the resume message
         if messages:
-            resume_msg += f" {messages[-1]['content']}"
+            resume_msg += f" {messages[-1].content}"
         input_ = Command(resume=resume_msg)
     async for agent, _, event_data in graph.astream(
         input_,
@@ -157,9 +171,9 @@ async def _astream_workflow_generator(
                 )
             continue
         message_chunk, message_metadata = cast(
-            tuple[AIMessageChunk, dict[str, any]], event_data
+            tuple[AIMessageChunk, dict[str, Any]], event_data
         )
-        event_stream_message: dict[str, any] = {
+        event_stream_message: dict[str, Any] = {
             "thread_id": thread_id,
             "agent": agent[0].split(":")[0],
             "id": message_chunk.id,
@@ -194,7 +208,7 @@ async def _astream_workflow_generator(
                 yield _make_event("message_chunk", event_stream_message)
 
 
-def _make_event(event_type: str, data: dict[str, any]):
+def _make_event(event_type: str, data: dict[str, Any]):
     if data.get("content") == "":
         data.pop("content")
     return f"event: {event_type}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
@@ -223,16 +237,16 @@ async def text_to_speech(request: TTSRequest):
             cluster=cluster,
             voice_type=voice_type,
         )
-        # Call the TTS API
+        # Call the TTS API with default values for None parameters
         result = tts_client.text_to_speech(
             text=request.text[:1024],
-            encoding=request.encoding,
-            speed_ratio=request.speed_ratio,
-            volume_ratio=request.volume_ratio,
-            pitch_ratio=request.pitch_ratio,
-            text_type=request.text_type,
-            with_frontend=request.with_frontend,
-            frontend_type=request.frontend_type,
+            encoding=request.encoding or "mp3",
+            speed_ratio=request.speed_ratio or 1.0,
+            volume_ratio=request.volume_ratio or 1.0,
+            pitch_ratio=request.pitch_ratio or 1.0,
+            text_type=request.text_type or "plain",
+            with_frontend=request.with_frontend or 1,
+            frontend_type=request.frontend_type or "unitTson",
         )
 
         if not result["success"]:

@@ -5,14 +5,13 @@ import { motion } from "framer-motion";
 
 import { cn } from "~/lib/utils";
 
-import { Welcome } from "./welcome";
-
 const questions = [
   "埃菲尔铁塔比世界最高建筑高多少倍？",
   "一块特斯拉电池的平均寿命与汽油发动机相比是多少年？",
   "生产1公斤牛肉需要多少升水？",
   "光速比音速快多少倍？",
 ];
+
 export function ConversationStarter({
   className,
   onSend,
@@ -22,9 +21,6 @@ export function ConversationStarter({
 }) {
   return (
     <div className={cn("flex flex-col items-center", className)}>
-      <div className="pointer-events-none fixed inset-0 flex items-center justify-center">
-        <Welcome className="pointer-events-auto mb-15 w-[75%] -translate-y-24" />
-      </div>
       <ul className="flex flex-wrap">
         {questions.map((question, index) => (
           <motion.li
