@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache/
+
+# 环境/依赖
+.venv/
+venv/
+.env
+
+# 编辑器/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 构建/打包
+build/
+dist/
+*.egg-info/
+
+# 前端依赖
+web/node_modules/
+web/.next/
+
+# 日志/临时文件
+*.log
+*.tmp
+
+# 其他
+.DS_Store
+Thumbs.db
+
+# 不上传本地配置和密钥
+conf.yaml
+
+# 不上传测试数据
+/tests/
+/conversations/
