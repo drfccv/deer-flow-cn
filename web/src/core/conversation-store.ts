@@ -253,7 +253,7 @@ export const useConversationStore = create<ConversationState>()(
                 }
               } else {
                 // 添加到当前 research 的活动列表（包括后续的 researcher 和最终的 reporter）
-                const activities = researchActivityIds.get(currentResearchId) || [];
+                const activities = researchActivityIds.get(currentResearchId) ?? [];
                 if (!activities.includes(message.id)) {
                   researchActivityIds.set(currentResearchId, [...activities, message.id]);
                 }
