@@ -5,18 +5,14 @@ import base64
 import json
 import logging
 import os
-from typing import List, cast, Any
+from typing import List, cast, Any, Union, Dict, Optional
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 from langchain_core.messages import AIMessageChunk, ToolMessage
-
-# 定义 Command 类，用于处理恢复消息
-class Command:
-    def __init__(self, resume=None):
-        self.resume = resume
+from langgraph.types import Command
 
 from src.graph.builder import build_graph_with_memory
 from src.podcast.graph.builder import build_graph as build_podcast_graph
@@ -113,99 +109,128 @@ async def _astream_workflow_generator(
     mode: str | None = "research",  # 新增 mode
     prompt: str | None = None,       # 新增 prompt
 ):
-    # 设置默认值
-    thread_id = thread_id or str(uuid4())
-    max_plan_iterations = max_plan_iterations or 3
-    max_step_num = max_step_num or 10  
-    auto_accepted_plan = auto_accepted_plan if auto_accepted_plan is not None else False
-    interrupt_feedback = interrupt_feedback or ""
-    mcp_settings = mcp_settings or {}
-    mode = mode or "research"
-    prompt = prompt or ""
-    
-    input_ = {
-        "messages": messages,
-        "plan_iterations": 0,
-        "final_report": "",
-        "current_plan": None,
-        "observations": [],
-        "auto_accepted_plan": auto_accepted_plan,
-        "enable_background_investigation": enable_background_investigation,
-        "mode": mode,  # 传递 mode
-        "prompt": prompt, # 传递 prompt
-    }
-    if not auto_accepted_plan and interrupt_feedback:
-        resume_msg = f"[{interrupt_feedback}]"
-        # add the last message to the resume message
-        if messages:
-            resume_msg += f" {messages[-1].content}"
-        input_ = Command(resume=resume_msg)
-    async for agent, _, event_data in graph.astream(
-        input_,
-        config={
-            "thread_id": thread_id,
-            "max_plan_iterations": max_plan_iterations,
-            "max_step_num": max_step_num,
-            "mcp_settings": mcp_settings,
-            "mode": mode,  # 传递 mode 到 config
-            "prompt": prompt, # 将 prompt 也传递到 config
-        },
-        stream_mode=["messages", "updates"],
-        subgraphs=True,
-    ):
-        if isinstance(event_data, dict):
-            if "__interrupt__" in event_data:
-                yield _make_event(
-                    "interrupt",
-                    {
-                        "thread_id": thread_id,
-                        "id": event_data["__interrupt__"][0].ns[0],
-                        "role": "assistant",
-                        "content": event_data["__interrupt__"][0].value,
-                        "finish_reason": "interrupt",
-                        "options": [
-                            {"text": "Edit plan", "value": "edit_plan"},
-                            {"text": "Start research", "value": "accepted"},
-                        ],
-                    },
-                )
-            continue
-        message_chunk, message_metadata = cast(
-            tuple[AIMessageChunk, dict[str, Any]], event_data
-        )
-        event_stream_message: dict[str, Any] = {
-            "thread_id": thread_id,
-            "agent": agent[0].split(":")[0],
-            "id": message_chunk.id,
-            "role": "assistant",
-            "content": message_chunk.content,
+    try:
+        # 设置默认值
+        thread_id = thread_id or str(uuid4())
+        max_plan_iterations = max_plan_iterations or 3
+        max_step_num = max_step_num or 10  
+        auto_accepted_plan = auto_accepted_plan if auto_accepted_plan is not None else False
+        interrupt_feedback = interrupt_feedback or ""
+        mcp_settings = mcp_settings or {}
+        mode = mode or "research"
+        prompt = prompt or ""
+        
+        input_: Union[Dict[str, Any], Command, None] = {
+            "messages": messages,
+            "plan_iterations": 0,
+            "final_report": "",
+            "current_plan": None,
+            "observations": [],
+            "auto_accepted_plan": auto_accepted_plan,
+            "enable_background_investigation": enable_background_investigation,
+            "mode": mode,  # 传递 mode
+            "prompt": prompt, # 传递 prompt
         }
-        if message_chunk.response_metadata.get("finish_reason"):
-            event_stream_message["finish_reason"] = message_chunk.response_metadata.get(
-                "finish_reason"
+        
+        # 处理中断恢复
+        if not auto_accepted_plan and interrupt_feedback:
+            resume_value = f"[{interrupt_feedback}]"
+            # add the last message to the resume message
+            if messages:
+                last_msg = messages[-1]
+                # Handle both dict and ChatMessage object
+                content = last_msg.get("content") if isinstance(last_msg, dict) else last_msg.content  # type: ignore
+                if content:
+                    resume_value += f" {content}"
+            # 使用 Command 恢复
+            input_ = Command(resume=resume_value)
+            
+        async for agent, _, event_data in graph.astream(
+            input_,  # type: ignore
+            config={
+                "thread_id": thread_id,
+                "configurable": {
+                    "max_plan_iterations": max_plan_iterations,
+                    "max_step_num": max_step_num,
+                    "mcp_settings": mcp_settings,
+                    "mode": mode,  # 传递 mode 到 config
+                    "prompt": prompt, # 将 prompt 也传递到 config
+                }
+            },  # type: ignore
+            stream_mode=["messages", "updates"],
+            subgraphs=True,
+        ):
+            if isinstance(event_data, dict):
+                if "__interrupt__" in event_data:
+                    yield _make_event(
+                        "interrupt",
+                        {
+                            "thread_id": thread_id,
+                            "id": event_data["__interrupt__"][0].ns[0],
+                            "role": "assistant",
+                            "content": event_data["__interrupt__"][0].value,
+                            "finish_reason": "interrupt",
+                            "options": [
+                                {"text": "Edit plan", "value": "edit_plan"},
+                                {"text": "Start research", "value": "accepted"},
+                            ],
+                        },
+                    )
+                continue
+            message_chunk, message_metadata = cast(
+                tuple[AIMessageChunk, dict[str, Any]], event_data
             )
-        if isinstance(message_chunk, ToolMessage):
-            # Tool Message - Return the result of the tool call
-            event_stream_message["tool_call_id"] = message_chunk.tool_call_id
-            yield _make_event("tool_call_result", event_stream_message)
-        else:
-            # AI Message - Raw message tokens
-            if message_chunk.tool_calls:
-                # AI Message - Tool Call
-                event_stream_message["tool_calls"] = message_chunk.tool_calls
-                event_stream_message["tool_call_chunks"] = (
-                    message_chunk.tool_call_chunks
+            event_stream_message: dict[str, Any] = {
+                "thread_id": thread_id,
+                "agent": agent[0].split(":")[0],
+                "id": message_chunk.id,
+                "role": "assistant",
+                "content": message_chunk.content,
+            }
+            if message_chunk.response_metadata.get("finish_reason"):
+                event_stream_message["finish_reason"] = message_chunk.response_metadata.get(
+                    "finish_reason"
                 )
-                yield _make_event("tool_calls", event_stream_message)
-            elif message_chunk.tool_call_chunks:
-                # AI Message - Tool Call Chunks
-                event_stream_message["tool_call_chunks"] = (
-                    message_chunk.tool_call_chunks
-                )
-                yield _make_event("tool_call_chunks", event_stream_message)
+            if isinstance(message_chunk, ToolMessage):
+                # Tool Message - Return the result of the tool call
+                event_stream_message["tool_call_id"] = message_chunk.tool_call_id
+                yield _make_event("tool_call_result", event_stream_message)
             else:
                 # AI Message - Raw message tokens
-                yield _make_event("message_chunk", event_stream_message)
+                if message_chunk.tool_calls:
+                    # AI Message - Tool Call
+                    event_stream_message["tool_calls"] = message_chunk.tool_calls
+                    event_stream_message["tool_call_chunks"] = (
+                        message_chunk.tool_call_chunks
+                    )
+                    yield _make_event("tool_calls", event_stream_message)
+                elif message_chunk.tool_call_chunks:
+                    # AI Message - Tool Call Chunks
+                    event_stream_message["tool_call_chunks"] = (
+                        message_chunk.tool_call_chunks
+                    )
+                    yield _make_event("tool_call_chunks", event_stream_message)
+                else:
+                    # AI Message - Raw message tokens
+                    yield _make_event("message_chunk", event_stream_message)
+    except Exception as e:
+        # 记录错误日志
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in workflow generator: {str(e)}", exc_info=True)
+        
+        # 发送错误事件给客户端
+        error_event = _make_event(
+            "error",
+            {
+                "thread_id": thread_id or "unknown",
+                "role": "assistant",
+                "content": f"发生错误: {str(e)}",
+                "error": str(e),
+                "finish_reason": "error",
+            },
+        )
+        yield error_event
 
 
 def _make_event(event_type: str, data: dict[str, Any]):
@@ -276,7 +301,7 @@ async def generate_podcast(request: GeneratePodcastRequest):
         report_content = request.content
         print(report_content)
         workflow = build_podcast_graph()
-        final_state = workflow.invoke({"input": report_content})
+        final_state = workflow.invoke({"input": report_content})  # type: ignore
         audio_bytes = final_state["output"]
         return Response(content=audio_bytes, media_type="audio/mp3")
     except Exception as e:
@@ -290,7 +315,7 @@ async def generate_ppt(request: GeneratePPTRequest):
         report_content = request.content
         print(report_content)
         workflow = build_ppt_graph()
-        final_state = workflow.invoke({"input": report_content})
+        final_state = workflow.invoke({"input": report_content})  # type: ignore
         generated_file_path = final_state["generated_file_path"]
         with open(generated_file_path, "rb") as f:
             ppt_bytes = f.read()
@@ -313,12 +338,19 @@ async def generate_prose(request: GenerateProseRequest):
                 "content": request.prompt,
                 "option": request.option,
                 "command": request.command,
-            },
+            },  # type: ignore
             stream_mode="messages",
             subgraphs=True,
         )
+        
+        async def generate_prose_stream():
+            async for _, event in events:
+                if hasattr(event[0], 'content'):
+                    content = getattr(event[0], 'content', '')
+                    yield f"data: {content}\n\n"
+        
         return StreamingResponse(
-            (f"data: {event[0].content}\n\n" async for _, event in events),
+            generate_prose_stream(),
             media_type="text/event-stream",
         )
     except Exception as e:
