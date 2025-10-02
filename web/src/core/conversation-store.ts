@@ -214,9 +214,69 @@ export const useConversationStore = create<ConversationState>()(
             finishReason: msg.metadata?.finishReason as "stop" | "interrupt" | "tool_calls" | undefined, // 恢复 finishReason 用于识别 interrupt 消息
           }));
           
-          // 逐个添加消息到消息系统
+          // 重建 research 相关状态
+          const researchIds: string[] = [];
+          const researchPlanIds = new Map<string, string>();
+          const researchReportIds = new Map<string, string>();
+          const researchActivityIds = new Map<string, string[]>();
+          
+          let currentResearchId: string | null = null;
+          let currentPlanId: string | null = null;
+          
+          // 遍历消息，重建 research 状态
           convertedMessages.forEach(message => {
+            // 添加消息到消息系统
             messageStore.appendMessage(message);
+            
+            // 检查是否是 planner 消息
+            if (message.agent === "planner") {
+              currentPlanId = message.id;
+            }
+            
+            // 检查是否是 research 相关消息（coder/researcher/reporter）
+            if (
+              message.agent === "coder" ||
+              message.agent === "researcher" ||
+              message.agent === "reporter"
+            ) {
+              // 如果这是新的 research（第一次遇到 researcher/coder 消息），创建新的 researchId
+              if (!currentResearchId) {
+                currentResearchId = message.id;
+                researchIds.push(currentResearchId);
+                
+                // 关联 plan
+                if (currentPlanId) {
+                  researchPlanIds.set(currentResearchId, currentPlanId);
+                  researchActivityIds.set(currentResearchId, [currentPlanId, message.id]);
+                } else {
+                  researchActivityIds.set(currentResearchId, [message.id]);
+                }
+              } else {
+                // 添加到当前 research 的活动列表（包括后续的 researcher 和最终的 reporter）
+                const activities = researchActivityIds.get(currentResearchId) || [];
+                if (!activities.includes(message.id)) {
+                  researchActivityIds.set(currentResearchId, [...activities, message.id]);
+                }
+              }
+              
+              // 如果是 reporter 消息，标记为这个 research 的最终报告
+              if (message.agent === "reporter") {
+                if (currentResearchId) {
+                  researchReportIds.set(currentResearchId, message.id);
+                }
+                // reporter 是 research 的结束，重置状态以便处理下一个 research
+                currentResearchId = null;
+                currentPlanId = null;
+              }
+            }
+          });
+          
+          // 更新 messageStore 的 research 状态，使用 setState 确保状态更新被正确触发
+          useStore.setState({
+            researchIds: researchIds,
+            researchPlanIds: researchPlanIds,
+            researchReportIds: researchReportIds,
+            researchActivityIds: researchActivityIds,
           });
         }
         
@@ -274,11 +334,17 @@ export const useConversationStore = create<ConversationState>()(
       },
 
       addMessageToConversation: (conversationId: string, message: ConversationMessage) => {
-        const { conversations } = get();
         const conversation = LocalConversationStorage.getConversationDetail(conversationId);
         
         if (!conversation) {
           console.error(`Conversation ${conversationId} not found`);
+          return;
+        }
+        
+        // 检查消息是否已存在（防止重复添加）
+        const messageExists = conversation.messages.some(existingMessage => existingMessage.id === message.id);
+        if (messageExists) {
+          console.log(`Message ${message.id} already exists in conversation ${conversationId}`);
           return;
         }
         
@@ -289,6 +355,9 @@ export const useConversationStore = create<ConversationState>()(
           updated_at: new Date().toISOString(),
         };
         LocalConversationStorage.saveConversationDetail(updatedConversation);
+        
+        // 从localStorage重新读取conversations列表以确保数据最新
+        const conversations = LocalConversationStorage.getConversations();
         
         // 更新对话摘要
         const updatedSummary: ConversationSummary = {

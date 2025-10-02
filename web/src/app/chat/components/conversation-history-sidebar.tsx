@@ -53,6 +53,10 @@ export function ConversationHistorySidebar({ className }: ConversationHistorySid
   const [editTitle, setEditTitle] = useState("");
   const [showClearDialog, setShowClearDialog] = useState(false);
   
+  // 自适应显示对话数量
+  const [visibleConversationCount, setVisibleConversationCount] = useState(10);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  
   // 浮动按钮位置状态
   const [floatingButtonPos, setFloatingButtonPos] = useState({ x: 8, y: 64 }); // 默认 left-2 top-16
   const [isDragging, setIsDragging] = useState(false);
@@ -63,6 +67,33 @@ export function ConversationHistorySidebar({ className }: ConversationHistorySid
     startPosX: 0,
     startPosY: 0
   });
+
+  // 计算可见对话数量（自适应）
+  useEffect(() => {
+    const calculateVisibleCount = () => {
+      // 侧边栏总高度：calc(100vh - 8rem) = 视口高度 - 128px
+      const sidebarHeight = window.innerHeight - 128;
+      // 头部高度：56px (h-14)
+      const headerHeight = 56;
+      // 可用于显示对话的高度
+      const availableHeight = sidebarHeight - headerHeight;
+      // 每个按钮高度：40px (h-10) + 间距 12px (space-y-3) = 52px
+      const buttonHeight = 52;
+      // 顶部padding：16px (py-4)
+      const topPadding = 16;
+      // 新建按钮高度（包括间距）
+      const newButtonHeight = 52;
+      // 可用于对话按钮的高度
+      const heightForConversations = availableHeight - topPadding - newButtonHeight;
+      // 计算可显示的对话数量
+      const count = Math.floor(heightForConversations / buttonHeight);
+      setVisibleConversationCount(Math.max(1, count)); // 至少显示1个
+    };
+
+    calculateVisibleCount();
+    window.addEventListener('resize', calculateVisibleCount);
+    return () => window.removeEventListener('resize', calculateVisibleCount);
+  }, []);
 
   // 加载对话列表
   useEffect(() => {
@@ -314,7 +345,7 @@ export function ConversationHistorySidebar({ className }: ConversationHistorySid
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
           className={cn(
-            "fixed z-50 h-12 w-12 sm:hidden rounded-2xl shadow-lg bg-background/90 backdrop-blur-sm border-2 transition-shadow duration-200",
+            "fixed z-50 h-12 w-12 sm:hidden rounded-lg shadow-lg bg-background/90 backdrop-blur-sm border-2 transition-shadow duration-200",
             isDragging ? "cursor-grabbing shadow-xl scale-105" : "cursor-grab hover:shadow-xl"
           )}
           style={{
@@ -343,18 +374,20 @@ export function ConversationHistorySidebar({ className }: ConversationHistorySid
           "fixed z-50 rounded-lg box-border overflow-hidden",
           // 移动端和桌面端适应
           sidebarOpen 
-            ? "left-2 right-2 top-14 h-[calc(100vh-64px)] w-auto sm:left-2 sm:right-auto sm:w-80" // 移动端全宽减去边距，桌面端固定宽度
-            : "w-0 sm:w-16 sm:left-2 sm:top-14 sm:h-[calc(100vh-64px)] overflow-hidden sm:overflow-visible",
+            ? "left-2 right-2 top-24 sm:left-2 sm:right-auto sm:w-80" // 移动端全宽减去边距，桌面端固定宽度
+            : "w-0 sm:w-16 sm:left-2 sm:top-24 overflow-hidden sm:overflow-visible",
           className
         )}
         style={{
           maxWidth: sidebarOpen ? 'calc(100vw - 16px)' : undefined,
-          minWidth: '0'
+          minWidth: '0',
+          height: sidebarOpen ? 'calc(100vh - 8rem)' : 'calc(100vh - 8rem)', // 固定高度：100vh - (top-24的6rem + 底部空间的2rem)
+          maxHeight: 'calc(100vh - 8rem)' // 确保不超出视口
         }}
       >
         {/* 头部 */}
         <div className={cn(
-          "flex items-center border-b border-border transition-all duration-300",
+          "flex items-center border-b border-border transition-all duration-300 flex-shrink-0",
           "h-14 min-h-[56px]", // 固定头部高度
           sidebarOpen ? "justify-between px-4" : "justify-center p-2 md:p-3"
         )}>
@@ -443,23 +476,17 @@ export function ConversationHistorySidebar({ className }: ConversationHistorySid
         {/* 对话列表 */}
         <ScrollArea 
           className={cn(
-            "transition-all duration-300 overscroll-contain",
-            sidebarOpen ? "flex-1 block overflow-y-auto" : "flex-1 p-1 md:p-2 hidden md:block",
-            // 添加特定class来覆盖ScrollArea内部样式
-            "[&>div]:!block [&>div]:!w-full [&>div]:!max-w-full [&>div]:!min-w-0"
+            "flex-1 transition-all duration-300 overscroll-contain overflow-y-auto",
+            sidebarOpen ? "p-3" : "p-1 md:p-2 hidden md:block"
           )}
           style={{
-            width: '100%',
-            maxWidth: '100%',
-            boxSizing: 'border-box',
-            padding: sidebarOpen ? '8px 12px' : undefined,
-            overflow: 'hidden', // 强制隐藏溢出内容
-            height: sidebarOpen ? 'calc(100% - 56px)' : 'calc(100% - 56px)' // 减去固定头部高度
+            minHeight: 0, // 关键：允许flex子元素正确收缩
+            height: '100%' // 确保占满剩余空间
           }}
         >
           {!sidebarOpen ? (
-            // 收起状态：在桌面端显示快捷操作按钮
-            <div className="hidden md:flex flex-col items-center py-4 space-y-3">
+            // 收起状态：在桌面端显示快捷操作按钮（自适应数量）
+            <div className="hidden md:flex flex-col items-center py-4 space-y-3" ref={scrollAreaRef}>
               <Button
                 variant="ghost"
                 size="icon"
@@ -469,7 +496,7 @@ export function ConversationHistorySidebar({ className }: ConversationHistorySid
               >
                 <Plus className="h-5 w-5" />
               </Button>
-              {conversations.slice(0, 3).map((conversation) => (
+              {conversations.slice(0, visibleConversationCount).map((conversation) => (
                 <Button
                   key={conversation.id}
                   variant="ghost"
@@ -486,17 +513,10 @@ export function ConversationHistorySidebar({ className }: ConversationHistorySid
               ))}
             </div>
           ) : (
-            <div 
-              className={cn(
-                "w-full transition-opacity duration-300",
-                sidebarOpen ? "opacity-100" : "opacity-0"
-              )}
-              style={{
-                maxWidth: '100%',
-                overflow: 'hidden',
-                boxSizing: 'border-box'
-              }}
-            >
+            <div className={cn(
+              "w-full transition-opacity duration-300",
+              sidebarOpen ? "opacity-100" : "opacity-0"
+            )}>
 
               
               {isLoading ? (
@@ -521,38 +541,17 @@ export function ConversationHistorySidebar({ className }: ConversationHistorySid
                   </Button>
                 </div>
               ) : (
-                <div 
-                  className="space-y-1" 
-                  style={{ 
-                    width: '100%',
-                    maxWidth: '100%',
-                    boxSizing: 'border-box',
-                    overflow: 'hidden', // 确保内容不会超出容器
-                    display: 'block', // 覆盖可能的table布局
-                    minWidth: '0', // 允许收缩
-                    overflowWrap: 'break-word' // 长单词自动换行
-                  }}
-                >
+                <div className="space-y-1">
                   {conversations.map((conversation) => (
                         <div
                   key={conversation.id}
                   className={cn(
-                    "group relative rounded-2xl cursor-pointer transition-colors",
-                    "overflow-hidden",
-                    "hover:bg-accent/50",
+                    "group relative rounded-lg cursor-pointer transition-all duration-200",
+                    "p-3 mb-1",
                     currentConversation?.id === conversation.id
-                      ? "bg-accent border border-accent-foreground/20 shadow-sm"
-                      : "hover:bg-accent/30"
+                      ? "bg-accent border border-accent-foreground/10"
+                      : "hover:bg-accent"
                   )}
-                  style={{ 
-                    width: '100%',
-                    maxWidth: '100%', 
-                    padding: '12px',
-                    boxSizing: 'border-box',
-                    overflow: 'hidden', // 强制裁剪超出内容
-                    display: 'block', // 确保为块级元素
-                    minWidth: '0' // 允许收缩到最小宽度
-                  }}
                   onClick={() => handleSelectConversation(conversation.id)}
                 >
                   {editingId === conversation.id ? (
@@ -591,90 +590,24 @@ export function ConversationHistorySidebar({ className }: ConversationHistorySid
                     </div>
                   ) : (
                     <>
-                      <div 
-                        className="flex items-start justify-between overflow-hidden"
-                        style={{ 
-                          width: '100%', 
-                          maxWidth: '100%',
-                          boxSizing: 'border-box',
-                          gap: '8px'
-                        }}
-                      >
-                        <div 
-                          className="overflow-hidden"
-                          style={{ 
-                            flex: '1 1 0%',
-                            minWidth: '0',
-                            maxWidth: 'calc(100% - 32px)', // 为操作按钮预留空间
-                            boxSizing: 'border-box',
-                            overflow: 'hidden' // 确保文本不会超出
-                          }}
-                        >
-                          <h3 
-                            className="font-medium text-sm mb-1" 
-                            style={{ 
-                              maxWidth: '100%',
-                              boxSizing: 'border-box',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              wordBreak: 'break-word'
-                            }}
-                          >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm mb-1 truncate">
                             {conversation.title}
                           </h3>
                           {conversation.last_message_preview && (
-                            <p 
-                              className="text-xs text-muted-foreground mb-1" 
-                              style={{ 
-                                maxWidth: '100%',
-                                boxSizing: 'border-box',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical' as React.CSSProperties['WebkitBoxOrient'],
-                                lineHeight: '1.4',
-                                maxHeight: '2.8em', // 限制为2行
-                                wordBreak: 'break-word'
-                              }}
-                            >
+                            <p className="text-xs text-muted-foreground mb-1 line-clamp-2 break-words">
                               {conversation.last_message_preview}
                             </p>
                           )}
-                          <div 
-                            className="flex items-center text-xs text-muted-foreground overflow-hidden" 
-                            style={{ 
-                              width: '100%',
-                              gap: '4px',
-                              boxSizing: 'border-box'
-                            }}
-                          >
-                            <span className="flex-shrink-0">{conversation.message_count} 条消息</span>
-                            <span className="flex-shrink-0">•</span>
-                            <span 
-                              style={{ 
-                                flex: '1 1 0%',
-                                minWidth: '0', 
-                                overflow: 'hidden', 
-                                textOverflow: 'ellipsis', 
-                                whiteSpace: 'nowrap' 
-                              }}
-                            >
-                              {formatTime(conversation.updated_at)}
-                            </span>
+                          <div className="flex items-center text-xs text-muted-foreground gap-1">
+                            <span>{conversation.message_count} 条消息</span>
+                            <span>•</span>
+                            <span className="truncate">{formatTime(conversation.updated_at)}</span>
                           </div>
                         </div>
                         
-                        <div 
-                          className="flex-shrink-0 flex justify-center items-start" 
-                          style={{ 
-                            width: '24px', 
-                            minWidth: '24px',
-                            maxWidth: '24px',
-                            boxSizing: 'border-box'
-                          }}
-                        >
+                        <div className="flex-shrink-0 flex items-start w-6">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
